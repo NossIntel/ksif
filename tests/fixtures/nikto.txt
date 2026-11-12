@@ -1,0 +1,11 @@
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          93.184.216.34
++ Target Hostname:    example.com
++ Target Port:        80
++ Server: nginx/1.18.0
++ /: The anti-clickjacking X-Frame-Options header is not present.
++ /: The X-Content-Type-Options header is not set.
++ OSVDB-3233: /icons/README: Apache default file found.
++ /admin/: This might be interesting: has an admin login page/section.
++ 8 host(s) tested

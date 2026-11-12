@@ -1,0 +1,17 @@
+Some banner text before JSON
+{
+  "target_url": "http://blog.lab.test/",
+  "version": {"number": "5.8.1", "status": "insecure",
+    "vulnerabilities": [
+      {"title": "WordPress 5.8 - 5.8.2 Core SQLi", "references": {"cve": ["2022-21664"]}}
+    ]},
+  "interesting_findings": [
+    {"url": "http://blog.lab.test/robots.txt", "to_s": "robots.txt found"}
+  ],
+  "plugins": {
+    "contact-form-7": {"version": {"number": "5.4"},
+      "vulnerabilities": [
+        {"title": "Contact Form 7 Unrestricted File Upload", "references": {"cve": ["2020-35489"]}}
+      ]}
+  }
+}

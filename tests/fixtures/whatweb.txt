@@ -1,0 +1,1 @@
+http://example.com [200 OK] Country[UNITED STATES][US], HTTPServer[nginx/1.18.0], IP[93.184.216.34], Title[Example Domain], X-Powered-By[PHP/7.4.3], Bootstrap, JQuery[3.5.1]

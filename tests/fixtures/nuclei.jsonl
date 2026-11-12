@@ -1,0 +1,4 @@
+{"template-id":"nginx-version","info":{"name":"Nginx version detect","severity":"info"},"matched-at":"http://example.com","host":"example.com"}
+{"template-id":"CVE-2021-1234","info":{"name":"Example Component RCE","severity":"high","classification":{"cve-id":["CVE-2021-1234"]}},"matched-at":"http://example.com/vuln","host":"example.com"}
+not-json-line
+{"template-id":"weak-cors","info":{"name":"Permissive CORS","severity":"medium"},"matched-at":"http://example.com/api"}
