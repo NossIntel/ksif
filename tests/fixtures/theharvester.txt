@@ -1,0 +1,17 @@
+*******************************************************************
+*  theHarvester 4.5.1                                             *
+*******************************************************************
+
+[*] Target: example.com
+
+[*] Emails found:
+------------------
+admin@example.com
+sales@example.com
+noreply@other.org
+
+[*] Hosts found:
+----------------
+www.example.com:93.184.216.34
+api.example.com:93.184.216.35
+intranet.example.com

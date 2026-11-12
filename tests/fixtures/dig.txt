@@ -1,0 +1,6 @@
+example.com.	3600	IN	A	93.184.216.34
+example.com.	3600	IN	AAAA	2606:2800:220:1:248:1893:25c8:1946
+example.com.	3600	IN	MX	10 mail.example.com.
+example.com.	3600	IN	NS	ns1.example.com.
+example.com.	3600	IN	TXT	"v=spf1 include:_spf.example.com +all"
+example.com.	3600	IN	SOA	ns1.example.com. admin.example.com. 2026111201 7200 3600 1209600 3600

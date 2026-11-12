@@ -1,0 +1,7 @@
+www.example.com
+api.example.com
+mail.example.com
+dev.example.com
+www.example.com
+not-the-domain.org
+vpn.example.com

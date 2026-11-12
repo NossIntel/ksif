@@ -75,17 +75,60 @@ def fake_dir(tmp_path) -> Path:
     return path
 
 
+class FakeHttp:
+    """Stand-in for AuthorizedHttpClient. Scripted responses keyed by URL."""
+
+    def __init__(self, responses=None, tls=None):
+        self.responses = responses or {}
+        self.tls = tls
+        self.requested: list[str] = []
+
+    def base_url(self, authorization, scheme="https"):
+        from core.models import TargetKind
+        if authorization.target.kind is TargetKind.URL:
+            return authorization.target.value
+        return f"{scheme}://{authorization.target.value}/"
+
+    def fetch(self, url, authorization, *, method="GET", timeout=None):
+        self.requested.append(url)
+        if url in self.responses:
+            return self.responses[url]
+        from core.http import HttpResponse
+        return HttpResponse(url=url, status=200, headers={}, body="", final_url=url)
+
+    def tls_info(self, authorization, port=443):
+        from core.http import TlsInfo
+        host = authorization.target.value
+        return self.tls or TlsInfo(host=host, port=port, protocol="TLSv1.3", cipher="TLS_AES_256_GCM_SHA384")
+
+
+class FakeIntel:
+    """Stand-in for IntelHttpClient. Scripted JSON keyed by URL substring."""
+
+    def __init__(self, payloads=None):
+        self.payloads = payloads or {}
+        self.requested: list[str] = []
+
+    def get_json(self, url, operator="system"):
+        self.requested.append(url)
+        for fragment, payload in self.payloads.items():
+            if fragment in url:
+                return payload
+        return None
+
+
 @pytest.fixture
 def make_engine(settings, scope, db, audit, fake_dir):
     """Factory for an Engine wired to the fake tool runner."""
 
-    def factory(*, root=True, available=None, resolver=None, mode=None):
+    def factory(*, root=True, available=None, resolver=None, mode=None, http=None, intel=None):
         if mode is not None:
             settings.mode = mode
         runner = FakeToolRunner(audit, fake_dir, available)
         return Engine(
             settings, scope, db, audit, runner, root_check=lambda: root,
             resolver=resolver or (lambda host: ["192.168.1.20"]),
+            http=http, intel=intel,
         )
 
     return factory

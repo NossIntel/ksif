@@ -17,6 +17,7 @@ from typing import Any
 
 from core.config import Scope, Settings
 from core.database import Database
+from core.http import AuthorizedHttpClient, IntelHttpClient
 from core.logger import LOGGER_NAME, AuditLogger
 from core.models import Finding, Host, Intrusiveness, Mode, Target, TargetKind
 from core.permissions import (
@@ -77,6 +78,8 @@ class ActionContext:
     op_id: int
     on_line: Callable[[str], None]
     raw_dir: Path
+    http: AuthorizedHttpClient
+    intel: IntelHttpClient
 
     @property
     def target(self) -> Target:
@@ -98,6 +101,9 @@ class ActionOutput:
 
     hosts: list[Host] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
+    osint: list[dict[str, Any]] = field(default_factory=list)
+    wifi: list[dict[str, Any]] = field(default_factory=list)
+    vulnerabilities: list[dict[str, Any]] = field(default_factory=list)
     summary: str = ""
     data: dict[str, Any] = field(default_factory=dict)
 
@@ -145,12 +151,16 @@ class Engine:
         runner: SubprocessManager,
         root_check: Callable[[], bool] = is_root,
         resolver: Resolver = default_resolver,
+        http: AuthorizedHttpClient | None = None,
+        intel: IntelHttpClient | None = None,
     ) -> None:
         self.settings = settings
         self.scope = scope
         self.db = db
         self.audit = audit
         self.runner = runner
+        self.http = http or AuthorizedHttpClient(audit)
+        self.intel = intel or IntelHttpClient(audit)
         self._root_check = root_check
         self._resolver = resolver
         self._actions: dict[str, Action] = {}
@@ -293,11 +303,15 @@ class Engine:
         context = ActionContext(
             authorization=authorization, runner=self.runner, db=self.db, settings=self.settings,
             scope=self.scope, op_id=op_id, on_line=on_line, raw_dir=self.settings.logs_dir / "raw",
+            http=self.http, intel=self.intel,
         )
         try:
             output = await action.handler(context, params)
             self.db.save_hosts(op_id, output.hosts)
             self.db.save_findings(op_id, output.findings)
+            self.db.save_osint(op_id, output.osint)
+            self.db.save_wifi(op_id, output.wifi)
+            self.db.save_vulnerabilities(op_id, output.vulnerabilities)
         except Exception as exc:  # noqa: BLE001 - any handler failure fails the operation
             message = f"{type(exc).__name__}: {exc}"
             self.db.finish_operation(op_id, "failed", message)

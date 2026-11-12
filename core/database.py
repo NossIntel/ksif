@@ -231,6 +231,41 @@ class Database:
                  "WHEN 'low' THEN 3 ELSE 4 END, id")
         return self._select_by_ops("findings", op_ids, order)
 
+    def save_osint(self, op_id: int, records: list[dict[str, Any]]) -> None:
+        """Store OSINT records (kind/name/value/source)."""
+        now = utc_now()
+        self.upsert_rows(
+            "osint_records",
+            [{"op_id": op_id, "kind": r["kind"], "name": r["name"], "value": str(r["value"])[:4000],
+              "source": r.get("source", ""), "created_at": now} for r in records],
+            ("kind", "name", "value"),
+        )
+
+    def save_wifi(self, op_id: int, networks: list[dict[str, Any]]) -> None:
+        """Store observed Wi-Fi networks."""
+        now = utc_now()
+        self.upsert_rows(
+            "wifi_networks",
+            [{"op_id": op_id, "bssid": n["bssid"], "ssid": n.get("ssid", ""), "channel": n.get("channel"),
+              "band": n.get("band", ""), "security": n.get("security", ""), "signal": n.get("signal"),
+              "owned": 1 if n.get("owned") else 0, "updated_at": now} for n in networks],
+            ("bssid",),
+        )
+
+    def save_vulnerabilities(self, op_id: int, vulns: list[dict[str, Any]]) -> None:
+        """Store or update correlated vulnerabilities."""
+        now = utc_now()
+        self.upsert_rows(
+            "vulnerabilities",
+            [{"op_id": op_id, "cve_id": v["cve_id"], "host": v.get("host", ""), "port": v.get("port"),
+              "product": v.get("product", ""), "version": v.get("version", ""), "cvss": v.get("cvss"),
+              "severity": v.get("severity", "unknown"), "epss": v.get("epss"), "kev": 1 if v.get("kev") else 0,
+              "summary": str(v.get("summary", ""))[:2000], "recommendation": v.get("recommendation", ""),
+              "priority": float(v.get("priority", 0.0)), "source": v.get("source", ""), "updated_at": now}
+             for v in vulns],
+            ("cve_id", "host", "port", "product"),
+        )
+
     def upsert_rows(self, table: str, rows: list[dict[str, Any]], conflict: tuple[str, ...]) -> None:
         """Insert rows, updating the non-key columns when *conflict* columns match."""
         if not rows:

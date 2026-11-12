@@ -21,8 +21,23 @@ from core.permissions import Authorization
 
 # Tools KSIF is allowed to execute. Attack tooling (aireplay-ng, mdk4, hydra,
 # medusa, ...) and shells are deliberately absent and must never be added.
-ALLOWED_BINARIES: frozenset[str] = frozenset({"nmap", "arp-scan", "masscan", "tshark"})
-PROBE_ARGS: frozenset[str] = frozenset({"--version", "-V", "-v", "--help"})
+ALLOWED_BINARIES: frozenset[str] = frozenset(
+    {
+        # 01 network discovery
+        "nmap", "arp-scan", "masscan", "tshark",
+        # 02 osint
+        "whois", "dig", "dnsrecon", "subfinder", "amass", "theHarvester",
+        # 03 web security
+        "whatweb", "nikto", "nuclei", "wpscan",
+        # 04 wi-fi (passive listing only)
+        "nmcli", "iw",
+        # 05 password lab (offline auditing of operator-supplied hashes only)
+        "john", "hashcat",
+    }
+)
+PROBE_ARGS: frozenset[str] = frozenset(
+    {"--version", "-V", "-v", "--help", "-version", "-Version", "version", "-h"}
+)
 
 
 class BinaryNotAllowed(PermissionError):
