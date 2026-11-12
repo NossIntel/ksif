@@ -10,23 +10,35 @@ results in SQLite and produces technical reports.
 
 ## Status
 
-Version 0.1.0. See [docs/STATUS.md](docs/STATUS.md) for exactly what is
+Version 0.2.0. See [docs/STATUS.md](docs/STATUS.md) for exactly what is
 implemented and how each part was verified.
 
 | # | Module | Status |
 |---|---|---|
 | 01 | Network Discovery | **Implemented** (nmap, arp-scan, masscan, tshark) |
-| 02 | OSINT Intelligence | Not implemented |
-| 03 | Web Security Assessment | Not implemented |
-| 04 | Wi-Fi Security Audit | Not implemented |
-| 05 | Password Security Lab | Not implemented |
-| 06 | Vulnerability Intelligence | Not implemented |
+| 02 | OSINT Intelligence | **Implemented** (whois, dig, subfinder, amass, theHarvester, TLS) |
+| 03 | Web Security Assessment | **Implemented** (whatweb, security headers, nikto, nuclei, wpscan) |
+| 04 | Wi-Fi Security Audit | **Implemented** (nmcli, iw — passive listing only) |
+| 05 | Password Security Lab | **Implemented** (offline strength, policy, breach and hash auditing) |
+| 06 | Vulnerability Intelligence | **Implemented** (NVD, EPSS, CISA KEV correlation) |
 | 07 | Asset Inventory | **Implemented** |
 | 08 | Report Generator | **Implemented** (HTML, Markdown, JSON, CSV; PDF with WeasyPrint) |
 | 09 | Configuration | **Implemented** |
 
-Modules that are not implemented appear in the menu as `not yet available`.
-Nothing is simulated.
+29 actions across the six modules. Nothing is simulated: every integration
+detects its tool, runs it for real and parses its real output.
+
+## Interfaces
+
+KSIF has two front ends over the same engine and the same security policy:
+
+- **Terminal (TUI):** `python main.py` — the primary interface, best on Kali.
+- **Graphical (GUI):** `python gui.py` — a Tkinter desktop window. A packaged
+  Windows executable (`KSIF.exe`) is produced by `scripts/build_exe.py`; it
+  bundles every Python dependency, so it runs with nothing to install. External
+  security tools are still detected at runtime, so on Windows (where most Kali
+  tools are absent) the GUI runs but most actions show as unavailable — full
+  function is on Kali. See [docs/gui.md](docs/gui.md).
 
 ## Install (Kali Linux / Debian)
 
@@ -111,8 +123,11 @@ More: [docs/architecture.md](docs/architecture.md), [SECURITY.md](SECURITY.md).
 
 - [Architecture](docs/architecture.md)
 - [Installation](docs/installation.md)
-- [Usage](docs/usage.md)
-- [Network Discovery module](docs/modules/network_discovery.md)
+- [Usage](docs/usage.md) · [Graphical interface & building the exe](docs/gui.md)
+- Modules: [Network Discovery](docs/modules/network_discovery.md) ·
+  [OSINT](docs/modules/osint.md) · [Web Security](docs/modules/web_security.md) ·
+  [Wi-Fi Audit](docs/modules/wifi_audit.md) · [Password Lab](docs/modules/password_lab.md) ·
+  [Vulnerability Intelligence](docs/modules/vulnerability_intelligence.md)
 - [Implementation status](docs/STATUS.md)
 - [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md)
 
@@ -137,7 +152,22 @@ alvos autorizados e inicie com `.venv/bin/python main.py`. O sistema começa em
 modo passivo e com escopo vazio; nada ativo é executado até você alterar os
 dois na tela Configuration.
 
-Nesta versão estão implementados Network Discovery, Asset Inventory, Report
-Generator e Configuration. Os módulos 02 a 06 ainda não existem e aparecem no
-menu como `not yet available`. O estado detalhado e o que foi verificado estão
-em [docs/STATUS.md](docs/STATUS.md).
+Nesta versão estão implementados os seis módulos (Network Discovery, OSINT,
+Web Security, Wi-Fi Audit, Password Lab e Vulnerability Intelligence), além de
+Asset Inventory, Report Generator e Configuration — 29 ações no total. Nada é
+simulado: cada integração detecta a ferramenta, executa de verdade e interpreta
+a saída real.
+
+Há duas interfaces sobre o mesmo motor: o terminal (`python main.py`, ideal no
+Kali) e a interface gráfica (`python gui.py`, em Tkinter). O
+`scripts/build_exe.py` gera um `KSIF.exe` para Windows que embute todas as
+dependências Python — abre sem instalar nada. As ferramentas externas (nmap,
+nuclei, nmcli…) são de Linux; no Windows o `.exe` abre e funciona como GUI, mas
+a maioria das ações aparece como indisponível, pois essas ferramentas não
+existem lá. A função plena é no Kali.
+
+Limites de segurança mantidos nos novos módulos: OSINT é só passivo; Wi-Fi é só
+listagem passiva (sem desautenticação, injeção ou captura); o laboratório de
+senhas é 100% offline sobre material seu; o WPScan exige que o site esteja
+listado como próprio. O estado detalhado e o que foi verificado estão em
+[docs/STATUS.md](docs/STATUS.md).

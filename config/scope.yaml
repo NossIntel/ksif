@@ -7,8 +7,12 @@
 #   subnets: ["192.168.1.0/24"]
 #   domains: ["example.com", "*.lab.example.com"]   # wildcard = subdomains only
 #   interfaces: ["eth0"]                            # for passive capture / ARP scans
+#   bssids: ["aa:bb:cc:dd:ee:ff"]                   # YOUR OWN access points (Wi-Fi audit)
+#   wordpress_sites: ["blog.example.com"]           # WordPress sites you own (wpscan)
 engagement: ""
 ips: []
 subnets: []
 domains: []
 interfaces: []
+bssids: []
+wordpress_sites: []

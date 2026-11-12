@@ -1,6 +1,6 @@
 [project]
 name = "ksif"
-version = "0.1.0"
+version = "0.2.0"
 description = "Kali Security Intelligence Framework - scope-enforced security assessment toolkit"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,6 +10,13 @@ dependencies = ["rich>=13.7", "pyyaml>=6.0"]
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
 pdf = ["weasyprint>=62"]
+build = ["pyinstaller>=6.0"]
+
+[project.scripts]
+ksif = "main:main"
+
+[project.gui-scripts]
+ksif-gui = "ui.gui:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

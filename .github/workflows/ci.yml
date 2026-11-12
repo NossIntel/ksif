@@ -37,3 +37,19 @@ jobs:
         run: .venv/bin/python main.py --check
       - name: Integration tests (real tools, loopback only)
         run: .venv/bin/python -m pytest -m integration -v
+
+  windows-build:
+    # Produce a downloadable Windows KSIF.exe (GUI) as a CI artifact.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller
+      - run: python -m pytest -q
+      - run: python scripts/build_exe.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KSIF-windows-exe
+          path: dist/KSIF.exe

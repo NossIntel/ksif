@@ -51,13 +51,34 @@ nmap 7.991, arp-scan 1.10.0, masscan 1.3.2, tshark 4.6.9):
 | `scripts/update.sh` | Syntax-checked only |
 | Termux | Untested |
 
+## Modules 02–06 and the GUI (added in 0.2.0)
+
+All six modules are implemented (29 actions total), verified locally with the
+same fake-tool harness (real output samples, parsed by the real code):
+
+| Module | Actions | Tests |
+|---|---|---|
+| 02 OSINT | whois, dns, subdomains, tls_cert, harvester, correlate | `tests/test_osint.py` |
+| 03 Web Security | fingerprint, headers, nikto, nuclei, wpscan | `tests/test_web_security.py` |
+| 04 Wi-Fi Audit | scan (nmcli), scan_iw, audit | `tests/test_wifi_audit.py` |
+| 05 Password Lab | analyze, policy_audit, compromised, hash_audit | `tests/test_password_lab.py` |
+| 06 Vulnerability Intel | enrich, lookup, kev, prioritize | `tests/test_vuln_intel.py` |
+
+The GUI (`tests/test_gui.py`) is smoke-tested where Tk has a display. The
+Windows executable was built with PyInstaller and launched manually on
+Windows 11: it opened, created `config/`, `database/` and `logs/` next to
+itself, and ran the out-of-scope block path. Not yet launched on Kali.
+
+Online actions (vuln.* and the TLS/HTTP checks) are tested against scripted
+responses, **not** against the live NVD/EPSS/CISA endpoints.
+
 ## Not implemented
 
-- Modules 02–06: OSINT, Web Security Assessment, Wi-Fi Security Audit,
-  Password Security Lab, Vulnerability Intelligence. The database tables and
-  report sections they will use already exist and are empty.
 - Netdiscover (arp-scan covers the same need).
-- Web interface, Docker image.
+- Web interface (the GUI is a desktop Tkinter app, not a web UI); Docker image.
+- hashcat wrapper (john is implemented; hashcat is allowlisted but unused).
+- A Linux build of the executable from CI (only a Windows `KSIF.exe` artifact is
+  produced; build on Kali with `scripts/build_exe.py` for a Linux binary).
 - Public release: the GitHub repository exists but is private.
 
 ## Deviations from the plan
