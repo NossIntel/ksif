@@ -51,6 +51,10 @@ PARAM_HINTS = {
     "password": "Password to evaluate (input is not stored)",
     "min_length": "Minimum length required by your policy (empty = 12)",
     "query": "Product and version, e.g. nginx 1.18.0",
+    "sources": "theHarvester sources (empty = crtsh,bing,duckduckgo)",
+    "port": "Port (empty = 443)",
+    "rescan": "Force a fresh scan? yes/no (empty = no)",
+    "severity": "nuclei severities (empty = low,medium,high,critical)",
 }
 
 

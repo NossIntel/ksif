@@ -5,9 +5,24 @@ from __future__ import annotations
 from core.subprocess_manager import SubprocessManager
 from integrations.arp_scan import ArpScanIntegration
 from integrations.base import ToolIntegration
+from integrations.john import JohnIntegration
 from integrations.masscan import MasscanIntegration
 from integrations.nmap import NmapIntegration
+from integrations.osint_tools import (
+    AmassIntegration,
+    DigIntegration,
+    SubfinderIntegration,
+    TheHarvesterIntegration,
+    WhoisIntegration,
+)
 from integrations.tshark import TsharkIntegration
+from integrations.web_tools import (
+    NiktoIntegration,
+    NucleiIntegration,
+    WhatWebIntegration,
+    WpscanIntegration,
+)
+from integrations.wifi_tools import IwIntegration, NmcliIntegration
 
 # (module label, integration class)
 CATALOGUE: list[tuple[str, type[ToolIntegration]]] = [
@@ -15,6 +30,18 @@ CATALOGUE: list[tuple[str, type[ToolIntegration]]] = [
     ("Network Discovery", ArpScanIntegration),
     ("Network Discovery", MasscanIntegration),
     ("Network Discovery", TsharkIntegration),
+    ("OSINT", WhoisIntegration),
+    ("OSINT", DigIntegration),
+    ("OSINT", SubfinderIntegration),
+    ("OSINT", AmassIntegration),
+    ("OSINT", TheHarvesterIntegration),
+    ("Web Security", WhatWebIntegration),
+    ("Web Security", NiktoIntegration),
+    ("Web Security", NucleiIntegration),
+    ("Web Security", WpscanIntegration),
+    ("Wi-Fi Audit", NmcliIntegration),
+    ("Wi-Fi Audit", IwIntegration),
+    ("Password Lab", JohnIntegration),
 ]
 
 

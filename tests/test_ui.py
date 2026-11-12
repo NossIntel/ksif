@@ -50,10 +50,19 @@ def test_eof_on_input_exits_cleanly(engine):
     assert "Session closed" in console.export_text()
 
 
-def test_unavailable_module_message(engine):
-    app, console = make_app(engine, ["2", "10"])
-    app.run()
-    assert "not yet available" in console.export_text()
+def test_all_modules_available(engine):
+    """With modules 01-06 implemented, the main menu shows no 'not yet available'."""
+    from main import build_engine
+    full, db, _s, _sc = build_engine(engine.settings.database_path.parent.parent)
+    try:
+        app, console = make_app(full, ["10"])
+        app.run()
+        assert "not yet available" not in console.export_text()
+        for module in ("osint", "web_security", "wifi_audit", "password_lab",
+                       "vulnerability_intelligence"):
+            assert full.actions(module), f"{module} has no actions"
+    finally:
+        db.close()
 
 
 def test_unknown_option(engine):
