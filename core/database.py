@@ -25,7 +25,10 @@ class Database:
     def __init__(self, path: Path | str) -> None:
         if str(path) != ":memory:":
             Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(path))
+        # check_same_thread=False lets the GUI run an action (and its database
+        # writes) in a worker thread while the Tk loop stays on the main thread.
+        # KSIF runs one operation at a time, so access is already serialized.
+        self.conn = sqlite3.connect(str(path), check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
 

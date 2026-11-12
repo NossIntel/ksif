@@ -20,8 +20,21 @@ from core.subprocess_manager import SubprocessManager
 from integrations.registry import self_test_all
 from ui.theme import THEME
 
-__version__ = "0.1.0"
-ROOT = Path(__file__).resolve().parent
+__version__ = "0.2.0"
+
+
+def _install_root() -> Path:
+    """Where KSIF keeps config, database, logs and reports.
+
+    Next to the executable when frozen by PyInstaller (so data persists between
+    runs), otherwise the repository root.
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+ROOT = _install_root()
 MODULES = (
     "modules.network_discovery.actions",
     "modules.osint.actions",

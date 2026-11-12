@@ -11,3 +11,8 @@ reports/*
 !reports/.gitkeep
 *.pcap
 *.egg-info/
+
+# build artifacts
+build/
+dist/
+*.spec
