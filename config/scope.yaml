@@ -1,0 +1,14 @@
+# KSIF authorized scope (allowlist). EMPTY BY DEFAULT: nothing active runs
+# until you list targets you own or are explicitly authorized to assess.
+#
+# Example:
+#   engagement: "Home lab audit 2026-11"
+#   ips: ["192.168.1.10"]
+#   subnets: ["192.168.1.0/24"]
+#   domains: ["example.com", "*.lab.example.com"]   # wildcard = subdomains only
+#   interfaces: ["eth0"]                            # for passive capture / ARP scans
+engagement: ""
+ips: []
+subnets: []
+domains: []
+interfaces: []

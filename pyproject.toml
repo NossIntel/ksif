@@ -1,0 +1,20 @@
+[project]
+name = "ksif"
+version = "0.1.0"
+description = "Kali Security Intelligence Framework - scope-enforced security assessment toolkit"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-or-later" }
+dependencies = ["rich>=13.7", "pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+pdf = ["weasyprint>=62"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: needs real external tools (run on Kali)"]
+addopts = "-m 'not integration'"

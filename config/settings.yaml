@@ -1,0 +1,9 @@
+# KSIF settings. Paths are relative to the repository root.
+operator: ""            # empty -> $KSIF_OPERATOR -> current system user
+mode: passive           # passive | active  (passive blocks every active/intrusive action)
+rate_limit_seconds: 2.0 # minimum interval between two operations
+default_timeout_seconds: 600
+paths:
+  database: database/ksif.db
+  logs: logs
+  reports: reports
