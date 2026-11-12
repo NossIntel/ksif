@@ -1,0 +1,13 @@
+BSS aa:bb:cc:dd:ee:ff(on wlan0)
+	freq: 2437
+	signal: -40.00 dBm
+	SSID: HomeNet
+	DS Parameter set: channel 6
+	RSN:	 * Version: 1
+		 * Authentication suites: PSK
+BSS 11:22:33:44:55:66(on wlan0) -- associated
+	freq: 2462
+	signal: -55.00 dBm
+	SSID: Neighbor
+	DS Parameter set: channel 11
+	capability: ESS Privacy (0x0411)

@@ -17,6 +17,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from core.logger import AuditLogger
+from core.models import TargetKind
 from core.permissions import Authorization
 
 # Tools KSIF is allowed to execute. Attack tooling (aireplay-ng, mdk4, hydra,
@@ -137,7 +138,10 @@ class SubprocessManager:
         clean = self._check_args(args)
         if not isinstance(authorization, Authorization):
             raise UnauthorizedExecution("a scope authorization is required")
-        if authorization.target.value not in clean:
+        # A NONE target is a local-only action (e.g. listing nearby Wi-Fi): there
+        # is no remote target to pin to an argument. Every other kind must appear
+        # verbatim, so a tool can never be pointed at something unauthorized.
+        if authorization.target.kind is not TargetKind.NONE and authorization.target.value not in clean:
             raise UnauthorizedExecution(
                 "the authorized target does not appear in the command arguments"
             )
