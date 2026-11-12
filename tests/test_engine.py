@@ -125,11 +125,11 @@ async def test_missing_tool_blocked(make_engine):
 
 
 async def test_any_tool_availability(make_engine):
-    engine = make_engine(available={"dig"})
-    action = make_action([], required_tools=("whois", "dig"), any_tool=True)
+    engine = make_engine(available={"masscan"})
+    action = make_action([], required_tools=("nmap", "masscan"), any_tool=True)
     assert engine.availability(action)[0] is True
-    strict = make_action([], id="t.2", required_tools=("whois", "dig"))
-    assert engine.availability(strict) == (False, "missing tool: whois")
+    strict = make_action([], id="t.2", required_tools=("nmap", "masscan"))
+    assert engine.availability(strict) == (False, "missing tool: nmap")
 
 
 async def test_requires_root_blocked(make_engine):

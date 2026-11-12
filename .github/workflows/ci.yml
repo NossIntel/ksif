@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+      - run: bash -n scripts/install.sh scripts/update.sh scripts/check_dependencies.sh
+
+  kali:
+    # Proves the acceptance criteria on a clean Kali image: the installer
+    # works, the application starts, and the real tools run and are parsed.
+    runs-on: ubuntu-latest
+    container: kalilinux/kali-rolling
+    steps:
+      - name: Install git (needed by checkout)
+        run: apt-get update -qq && apt-get install -y -qq git
+      - uses: actions/checkout@v4
+      - name: Run the installer
+        run: bash scripts/install.sh
+      - name: Health check
+        run: .venv/bin/python main.py --check
+      - name: Integration tests (real tools, loopback only)
+        run: .venv/bin/python -m pytest -m integration -v
