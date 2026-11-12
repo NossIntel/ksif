@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from core.models import Host, Port
+from core.models import Finding, Host, Port
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
@@ -207,6 +207,56 @@ class Database:
                 )
             )
         return hosts
+
+    # -- findings and intelligence -----------------------------------------
+    def save_findings(self, op_id: int, findings: list[Finding]) -> None:
+        """Store findings produced by an operation."""
+        now = utc_now()
+        self.insert_many(
+            "findings",
+            [
+                {
+                    "op_id": op_id, "module": f.module, "category": f.category, "severity": f.severity,
+                    "title": f.title, "target": f.target, "description": f.description,
+                    "evidence": f.evidence[:8000], "recommendation": f.recommendation,
+                    "reference": f.reference, "created_at": now,
+                }
+                for f in findings
+            ],
+        )
+
+    def list_findings(self, op_ids: list[int] | None = None) -> list[dict[str, Any]]:
+        """Findings ordered by severity (critical first)."""
+        order = ("CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 "
+                 "WHEN 'low' THEN 3 ELSE 4 END, id")
+        return self._select_by_ops("findings", op_ids, order)
+
+    def upsert_rows(self, table: str, rows: list[dict[str, Any]], conflict: tuple[str, ...]) -> None:
+        """Insert rows, updating the non-key columns when *conflict* columns match."""
+        if not rows:
+            return
+        self._check_identifier(table, *rows[0], *conflict)
+        cols = list(rows[0])
+        updates = ", ".join(f"{c}=excluded.{c}" for c in cols if c not in conflict)
+        sql = (f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join('?' for _ in cols)}) "
+               f"ON CONFLICT({', '.join(conflict)}) DO UPDATE SET {updates}")
+        with self.conn:
+            self.conn.executemany(sql, [tuple(r[c] for c in cols) for r in rows])
+
+    def list_rows(self, table: str, op_ids: list[int] | None = None, order: str = "id") -> list[dict[str, Any]]:
+        """All rows of an intelligence table, optionally limited to some operations."""
+        self._check_identifier(table)
+        return self._select_by_ops(table, op_ids, order)
+
+    def _select_by_ops(self, table: str, op_ids: list[int] | None, order: str) -> list[dict[str, Any]]:
+        if op_ids is None:
+            return self.query(f"SELECT * FROM {table} ORDER BY {order}")
+        if not op_ids:
+            return []
+        marks = ", ".join("?" for _ in op_ids)
+        return self.query(
+            f"SELECT * FROM {table} WHERE op_id IN ({marks}) ORDER BY {order}", tuple(int(i) for i in op_ids)
+        )
 
     # -- audit and reports -------------------------------------------------
     def add_audit(self, event: dict[str, Any]) -> None:

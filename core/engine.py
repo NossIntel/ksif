@@ -18,7 +18,7 @@ from typing import Any
 from core.config import Scope, Settings
 from core.database import Database
 from core.logger import LOGGER_NAME, AuditLogger
-from core.models import Host, Intrusiveness, Mode, Target, TargetKind
+from core.models import Finding, Host, Intrusiveness, Mode, Target, TargetKind
 from core.permissions import (
     Authorization,
     ModeViolation,
@@ -97,6 +97,7 @@ class ActionOutput:
     """Structured result of a handler."""
 
     hosts: list[Host] = field(default_factory=list)
+    findings: list[Finding] = field(default_factory=list)
     summary: str = ""
     data: dict[str, Any] = field(default_factory=dict)
 
@@ -296,6 +297,7 @@ class Engine:
         try:
             output = await action.handler(context, params)
             self.db.save_hosts(op_id, output.hosts)
+            self.db.save_findings(op_id, output.findings)
         except Exception as exc:  # noqa: BLE001 - any handler failure fails the operation
             message = f"{type(exc).__name__}: {exc}"
             self.db.finish_operation(op_id, "failed", message)

@@ -69,3 +69,25 @@ class Host:
     state: str = "up"
     ports: list[Port] = field(default_factory=list)
     hops: list[str] = field(default_factory=list)
+
+
+SEVERITIES = ("critical", "high", "medium", "low", "info")
+
+
+@dataclass
+class Finding:
+    """A security observation produced by any module."""
+
+    module: str
+    category: str
+    severity: str  # one of SEVERITIES
+    title: str
+    target: str
+    description: str = ""
+    evidence: str = ""
+    recommendation: str = ""
+    reference: str = ""
+
+    def __post_init__(self) -> None:
+        if self.severity not in SEVERITIES:
+            self.severity = "info"
