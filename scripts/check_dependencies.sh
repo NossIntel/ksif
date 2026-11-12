@@ -7,7 +7,7 @@ TOOLS=(nmap arp-scan masscan tshark)
 
 version_of() {
     case "$1" in
-        tshark) "$1" -v 2>&1 | head -n 1 ;;
+        tshark) "$1" -v 2>/dev/null | head -n 1 ;;
         *) "$1" --version 2>&1 | grep -m1 -E '[0-9]+\.[0-9]+' ;;
     esac
 }

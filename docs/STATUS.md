@@ -27,18 +27,29 @@ any of the external tools.
 stand-in program that prints sample output. The samples were written by hand
 in each tool's documented format; they are not captures from real runs.
 
+## Verified on Kali (GitHub Actions, `kalilinux/kali-rolling`, 2026-11-12)
+
+The `kali` CI job passed on a clean Kali container (Python 3.14.8,
+nmap 7.991, arp-scan 1.10.0, masscan 1.3.2, tshark 4.6.9):
+
+- `scripts/install.sh` ran end to end: packages installed, `.venv` created,
+  database initialized at schema version 2, 216 unit tests passed.
+- `python main.py --check` started and really executed each tool's probe.
+- 8 integration tests passed with the real tools, loopback only: version
+  detection of all four tools; nmap host discovery, port scan and
+  service/OS detection of `127.0.0.1`, parsed and stored; an out-of-scope
+  target (`8.8.8.8`) blocked without any process being started.
+
 ## Not verified yet
 
 | Item | How to verify |
 |---|---|
-| `scripts/install.sh` on a clean Kali | Push to GitHub: the `kali` CI job runs it in `kalilinux/kali-rolling`. Or run it on a Kali machine. |
-| Real execution and parsing of nmap, arp-scan, masscan, tshark | `pytest -m integration -v` on Kali (also run by the `kali` CI job, loopback only) |
-| ARP scan and passive capture on a real network | Manual run on Kali with root and an interface listed in the scope |
+| arp-scan, Masscan and tshark beyond version detection | Their parsers are tested only against hand-written samples. Run them on Kali with root against a lab network in scope. |
+| The interactive interface on a Kali terminal | Run `python main.py` on Kali. It was run interactively only on Windows. |
+| Multi-host results from real nmap | The CI scan saw one host (loopback). Scan a lab subnet. |
 | PDF reports | Install WeasyPrint and generate one |
-| The CI workflow itself | It has never run; it may need adjustments on first push |
+| `scripts/update.sh` | Syntax-checked only |
 | Termux | Untested |
-
-Shell scripts passed `bash -n` (syntax only).
 
 ## Not implemented
 
@@ -47,7 +58,7 @@ Shell scripts passed `bash -n` (syntax only).
   report sections they will use already exist and are empty.
 - Netdiscover (arp-scan covers the same need).
 - Web interface, Docker image.
-- Publication on GitHub.
+- Public release: the GitHub repository exists but is private.
 
 ## Deviations from the plan
 
