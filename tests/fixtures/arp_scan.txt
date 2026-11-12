@@ -1,0 +1,9 @@
+Interface: eth0, type: EN10MB, MAC: 00:0c:29:aa:bb:cc, IPv4: 192.168.1.50
+Starting arp-scan 1.10.0 with 256 hosts (https://github.com/royhills/arp-scan)
+192.168.1.1	a4:91:b1:11:22:33	Technicolor Delivery Technologies Belgium NV
+192.168.1.23	B8:27:EB:44:55:66	Raspberry Pi Foundation
+192.168.1.23	b8:27:eb:44:55:66	Raspberry Pi Foundation (DUP: 2)
+192.168.1.77	02:11:22:33:44:55	(Unknown: locally administered)
+
+4 packets received by filter, 0 packets dropped by kernel
+Ending arp-scan 1.10.0: 256 hosts scanned in 1.906 seconds (134.31 hosts/sec). 3 responded

@@ -1,0 +1,4 @@
+# sample in nmap-mac-prefixes format
+A491B1 Technicolor Delivery Technologies Belgium NV
+B827EB Raspberry Pi Foundation
+001BA9 Brother industries

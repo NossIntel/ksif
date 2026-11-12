@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.95 scan initiated Thu Nov 12 10:00:00 2026 as: nmap -oX - -T3 -&#45;max-rate 300 -sV -O -&#45;traceroute 192.168.1.0/24 -->
+<nmaprun scanner="nmap" args="nmap -oX - -T3 --max-rate 300 -sV -O --traceroute 192.168.1.0/24" start="1794477600" startstr="Thu Nov 12 10:00:00 2026" version="7.95" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="1000" services="1-1000"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<host starttime="1794477601" endtime="1794477660"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.1" addrtype="ipv4"/>
+<address addr="A4:91:B1:11:22:33" addrtype="mac" vendor="Technicolor Delivery Technologies Belgium NV"/>
+<hostnames>
+<hostname name="gateway.lan" type="PTR"/>
+</hostnam

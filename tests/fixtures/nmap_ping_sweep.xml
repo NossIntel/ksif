@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sn -oX - 192.168.1.0/24" start="1794477600" version="7.95" xmloutputversion="1.05">
+<verbose level="0"/>
+<debugging level="0"/>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.1" addrtype="ipv4"/>
+<address addr="A4:91:B1:11:22:33" addrtype="mac" vendor="Technicolor"/>
+<hostnames>
+</hostnames>
+<times srtt="400" rttvar="5000" to="100000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="192.168.1.23" addrtype="ipv4"/>
+<address addr="B8:27:EB:44:55:66" addrtype="mac"/>
+<hostnames>
+<hostname name="raspberrypi.lan" type="PTR"/>
+</hostnames>
+</host>
+<runstats><finished time="1794477603" timestr="Thu Nov 12 10:00:03 2026" elapsed="2.61" exit="success"/><hosts up="2" down="254" total="256"/>
+</runstats>
+</nmaprun>
