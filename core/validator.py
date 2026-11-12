@@ -150,8 +150,20 @@ def validate_int(raw: object, *, low: int, high: int, name: str) -> int:
 
 
 def parse_file_target(raw: str) -> Target:
-    """Return a FILE target for an existing, readable regular file."""
-    value = _basic_checks(raw.strip().strip('"')) if isinstance(raw, str) else _basic_checks(raw)
+    """Return a FILE target for an existing, readable regular file.
+
+    File paths may contain spaces, so this does not apply the network-target
+    whitespace rules; it only rejects NUL and line breaks (which cannot appear
+    in a real path and would be unsafe as an argument) and requires the file to
+    exist. The path is never turned into a shell string, so spaces are safe.
+    """
+    if not isinstance(raw, str):
+        raise ValidationError("file path must be a string")
+    value = raw.strip().strip('"').strip("'")
+    if not value:
+        raise ValidationError("file path is empty")
+    if any(ord(ch) < 32 and ch not in (" ",) or ord(ch) == 127 for ch in value):
+        raise ValidationError("file path contains control characters")
     path = Path(value).expanduser()
     if not path.is_file():
         raise ValidationError(f"file not found: {value[:120]}")
