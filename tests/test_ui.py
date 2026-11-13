@@ -41,7 +41,7 @@ def test_main_menu_lists_ten_items_and_exit(engine):
     for item in expected:
         assert item.replace("] ", "]") in text.replace("│", "").replace("  ", " ").replace("] ", "]") or item in text
     assert len(MAIN_MENU) == 10
-    assert "operator" in text and "tester" in text and "ACTIVE" in text
+    assert "Operator" in text and "tester" in text and "ACTIVE" in text
 
 
 def test_eof_on_input_exits_cleanly(engine):

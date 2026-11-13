@@ -12,13 +12,14 @@ from rich.text import Text
 
 from core.config import Scope, Settings
 from core.models import Host
+from ui.i18n import t as _
 
 
 def _table(title: str, *columns: str) -> Table:
-    table = Table(title=title, box=box.SIMPLE_HEAVY, title_style="ksif.title", header_style="ksif.dim",
+    table = Table(title=_(title), box=box.SIMPLE_HEAVY, title_style="ksif.title", header_style="ksif.dim",
                   expand=False)
     for column in columns:
-        table.add_column(column, overflow="fold")
+        table.add_column(_(column), overflow="fold")
     return table
 
 
@@ -37,9 +38,9 @@ def header_panel(settings: Settings, scope: Scope) -> Panel:
     mode_style = "ksif.passive" if settings.mode.value == "passive" else "ksif.active"
     scope_count = len(scope.ips) + len(scope.subnets) + len(scope.domains) + len(scope.interfaces) + len(scope.bssids)
     text = Text.assemble(
-        ("operator ", "ksif.dim"), (settings.operator, "bold"), ("   mode ", "ksif.dim"),
-        (settings.mode.value.upper(), mode_style), ("   engagement ", "ksif.dim"),
-        (scope.engagement or "(not set)", "bold"), ("   scope entries ", "ksif.dim"),
+        (_("Operator") + " ", "ksif.dim"), (settings.operator, "bold"), ("   " + _("Mode") + " ", "ksif.dim"),
+        (_(settings.mode.value).upper(), mode_style), ("   " + _("Engagement") + " ", "ksif.dim"),
+        (scope.engagement or "-", "bold"), ("   " + _("scope entries") + " ", "ksif.dim"),
         (str(scope_count), "ksif.ok" if scope_count else "ksif.err"),
     )
     return Panel(text, box=box.ROUNDED, border_style="green")

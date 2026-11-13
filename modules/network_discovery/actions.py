@@ -212,9 +212,29 @@ def register(engine: Engine) -> None:
          ("duration",), "Listen only: hosts and protocols seen on an interface", _pv_capture,
          "Passive: listens on an interface for N seconds (max 300) and lists hosts/protocols. No packets stored."),
     ]
+    pt = {
+        "net.host_discovery": ("Descoberta de hosts (ping sweep)", "Encontra hosts ativos, MACs e fabricantes",
+            "Informe um IP, faixa (CIDR) ou domínio. Mostra quais hosts estão ativos e o MAC/fabricante.\n"
+            "Exemplo: escolha esta ação e digite  192.168.1.0/24"),
+        "net.arp_scan": ("Varredura ARP (segmento local)", "Descoberta em camada 2 na sua LAN",
+            "Precisa de root e de uma interface no escopo. Acha dispositivos que ignoram ping. Só IPv4.\n"
+            "Informe o alvo  192.168.1.0/24  e a interface  eth0"),
+        "net.port_scan": ("Varredura de portas", "Portas TCP abertas (1000 mais comuns por padrão)",
+            "Informe um alvo; opcionalmente as portas, como 22,80,443 ou 1-1024 (vazio = 1000 mais comuns)."),
+        "net.service_os": ("Detecção de serviços, versões e SO", "Versões dos serviços e fingerprint do SO",
+            "Precisa de root (detecção de SO). Identifica as versões, que alimentam o módulo 06 (CVEs)."),
+        "net.topology": ("Topologia (traceroute)", "Caminho salto a salto e mapa de sub-redes",
+            "Precisa de root. Mapeia a rota até o alvo e agrupa os hosts por sub-rede."),
+        "net.fast_sweep": ("Varredura rápida (masscan, taxa limitada)", "Varredura veloz; só em escopos autorizados",
+            "Intrusiva: redigite o alvo para confirmar. Taxa limitada a 1000 pps. Só IPv4."),
+        "net.passive_capture": ("Captura passiva (tshark)", "Só escuta: hosts e protocolos de uma interface",
+            "Passiva: escuta uma interface por N segundos (máx. 300) e lista hosts/protocolos. Não guarda pacotes."),
+    }
     for ident, title, level, kinds, tools, root, handler, params, description, preview, usage in specs:
+        tpt, dpt, upt = pt.get(ident, ("", "", ""))
         engine.register(
             Action(id=ident, module=MODULE, title=title, intrusiveness=level, target_kinds=kinds,
                    required_tools=tools, requires_root=root, handler=handler, params=params,
-                   description=description, preview=preview, usage=usage)
+                   description=description, preview=preview, usage=usage,
+                   title_pt=tpt, description_pt=dpt, usage_pt=upt)
         )

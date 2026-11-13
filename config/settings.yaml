@@ -1,5 +1,6 @@
 # KSIF settings. Paths are relative to the repository root.
 operator: ""            # empty -> $KSIF_OPERATOR -> current system user
+language: pt            # pt (português) | en (English) — interface language
 mode: passive           # passive | active  (passive blocks every active/intrusive action)
 rate_limit_seconds: 2.0 # minimum interval between two operations
 default_timeout_seconds: 600

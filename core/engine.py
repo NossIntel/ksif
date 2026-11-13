@@ -129,6 +129,9 @@ class Action:
     consent: str = ""  # non-empty: always ask the operator to confirm this statement
     usage: str = ""  # human "how to use": what to give it, what it returns, notes
     preview: Callable[[Target, dict[str, Any]], list[str]] | None = None  # exact command(s)
+    title_pt: str = ""  # Portuguese translations (the UI localizes; core stays English)
+    description_pt: str = ""
+    usage_pt: str = ""
 
 
 @dataclass

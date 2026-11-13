@@ -204,8 +204,21 @@ def register(engine: Engine) -> None:
          "I confirm this WordPress site is mine or I am authorized to assess it", _pv_wpscan,
          "Only for hosts listed under 'wordpress_sites' in scope.yaml. Enumerates core/plugins/users."),
     ]
+    pt = {
+        "web.fingerprint": ("Fingerprint de tecnologias (WhatWeb)", "Identifica servidor, frameworks e tecnologias",
+            "Informe um domínio, URL ou IP. Identifica o servidor, frameworks e bibliotecas em uso."),
+        "web.headers": ("Verificação de cabeçalhos de segurança", "Cabeçalhos HTTP de segurança (HSTS, CSP, cookies)",
+            "Informe um domínio ou URL. Sem ferramenta externa. Verifica os cabeçalhos HTTP de segurança."),
+        "web.nikto": ("Varredura de configuração (nikto)", "Problemas de servidor web e arquivos expostos",
+            "Informe um domínio ou URL. Procura problemas conhecidos e arquivos expostos (gera bastante tráfego)."),
+        "web.nuclei": ("Varredura por templates (nuclei)", "Templates da comunidade para problemas conhecidos",
+            "Informe um alvo; severidade opcional (padrão low,medium,high,critical). Envia CVEs ao módulo 06."),
+        "web.wpscan": ("Avaliação de WordPress (wpscan)", "Problemas no core/plugins (só sites próprios)",
+            "Só para hosts em 'wordpress_sites' no scope.yaml. Enumera core, plugins e usuários."),
+    }
     for ident, title, level, kinds, tools, handler, prms, desc, consent, preview, usage in specs:
+        tpt, dpt, upt = pt.get(ident, ("", "", ""))
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=level,
                                target_kinds=kinds, required_tools=tools, requires_root=False,
                                handler=handler, params=prms, description=desc, consent=consent,
-                               preview=preview, usage=usage))
+                               preview=preview, usage=usage, title_pt=tpt, description_pt=dpt, usage_pt=upt))

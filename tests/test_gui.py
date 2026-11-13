@@ -35,7 +35,7 @@ def test_gui_builds_and_lists_actions(tk_root, make_engine, tmp_path):
     gui = KsifGui(tk_root, engine, config_dir)
     gui._select_module("network_discovery")
     assert gui.action_tree.get_children()  # actions are listed
-    assert "operator" in gui.header_label.cget("text")
+    assert "Operator" in gui.header_label.cget("text")
     # selecting an action populates the form without raising
     first = gui.action_tree.get_children()[0]
     gui.action_tree.selection_set(first)

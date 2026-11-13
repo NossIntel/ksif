@@ -28,6 +28,13 @@ implemented and how each part was verified.
 29 actions across the six modules. Nothing is simulated: every integration
 detects its tool, runs it for real and parses its real output.
 
+## Idioma / Language
+
+A interface abre em **português** por padrão. Para mudar: tela Configuração →
+"Mudar idioma (pt/en)" no terminal, ou o botão **Idioma** na GUI; ou edite
+`language: pt|en` em `config/settings.yaml`. O código, os nomes das ferramentas
+e os comandos permanecem em inglês.
+
 ## Interfaces
 
 KSIF has two front ends over the same engine and the same security policy:

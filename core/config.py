@@ -28,6 +28,7 @@ class Settings:
     database_path: Path
     logs_dir: Path
     reports_dir: Path
+    language: str = "pt"  # UI language: "pt" or "en"
 
 
 @dataclass
@@ -91,6 +92,7 @@ def load_settings(path: Path, root: Path | None = None) -> Settings:
     except (TypeError, ValueError):
         timeout = 600
     operator = str(data.get("operator") or "").strip() or _default_operator()
+    language = "en" if str(data.get("language", "pt")).lower().startswith("en") else "pt"
     return Settings(
         operator=operator,
         mode=mode,
@@ -99,6 +101,7 @@ def load_settings(path: Path, root: Path | None = None) -> Settings:
         database_path=base / str(paths.get("database", "database/ksif.db")),
         logs_dir=base / str(paths.get("logs", "logs")),
         reports_dir=base / str(paths.get("reports", "reports")),
+        language=language,
     )
 
 
@@ -115,6 +118,7 @@ def save_settings(settings: Settings, path: Path, root: Path | None = None) -> N
     data = {
         "operator": settings.operator,
         "mode": settings.mode.value,
+        "language": settings.language,
         "rate_limit_seconds": settings.rate_limit_seconds,
         "default_timeout_seconds": settings.default_timeout_seconds,
         "paths": {

@@ -26,7 +26,8 @@ from integrations.registry import self_test_all
 from modules.network_discovery.topology import subnet_map
 from modules.reporting.builder import build_report
 from modules.reporting.renderers import FORMATS, ReportFormatUnavailable, pdf_available, save_report
-from ui import views
+from ui import i18n, views
+from ui.i18n import t as _
 from ui.theme import ASCII_BANNER, BANNER, LEVEL_STYLE, TAGLINE
 
 MAIN_MENU: list[tuple[str, str, str | None]] = [
@@ -76,6 +77,7 @@ class App:
         self.console = console
         self._ask_raw = ask or console.input
         self.config_dir = config_dir
+        i18n.set_language(getattr(engine.settings, "language", "pt"))
 
     # ------------------------------------------------------------ helpers
     def _ask(self, prompt: str) -> str:
@@ -85,7 +87,7 @@ class App:
             raise Quit from None
 
     def _pause(self) -> None:
-        self._ask("[ksif.dim]press Enter to continue[/] ")
+        self._ask(f"[ksif.dim]{_('press Enter to continue')}[/] ")
 
     def _header(self) -> None:
         self.console.print(views.header_panel(self.engine.settings, self.engine.scope))
@@ -94,7 +96,7 @@ class App:
         encoding = (self.console.encoding or "").lower()
         art = BANNER if "utf" in encoding else ASCII_BANNER
         self.console.print(Text(art, style="ksif.banner"))
-        self.console.print(f"[ksif.title]{TAGLINE}[/]  [ksif.dim]authorized use only[/]\n")
+        self.console.print(f"[ksif.title]{TAGLINE}[/]  [ksif.dim]{_('authorized use only')}[/]\n")
 
     # ------------------------------------------------------------ main loop
     def run(self) -> int:
@@ -103,22 +105,22 @@ class App:
         try:
             while True:
                 self._header()
-                menu = Table(box=box.ROUNDED, show_header=False, border_style="green", title="Main menu",
+                menu = Table(box=box.ROUNDED, show_header=False, border_style="green", title=_("Main menu"),
                              title_style="ksif.title")
                 for number, title, module in MAIN_MENU:
                     note = ""
                     if module is not None and not self.engine.actions(module):
-                        note = "[ksif.dim]not yet available[/]"
-                    menu.add_row(f"[ksif.key]\\[{number}][/]", title, note)
+                        note = f"[ksif.dim]{_('not yet available')}[/]"
+                    menu.add_row(f"[ksif.key]\\[{number}][/]", _(title), note)
                 self.console.print(menu)
                 choice = self._ask("[ksif.key]ksif>[/] ").lstrip("0") or "0"
                 if choice == "10":
                     break
                 entry = next((e for e in MAIN_MENU if e[0].lstrip("0") == choice), None)
                 if entry is None:
-                    self.console.print("[ksif.warn]Unknown option.[/]")
+                    self.console.print(f"[ksif.warn]{_('Unknown option.')}[/]")
                 elif entry[2] is not None:
-                    self._module_menu(entry[1], entry[2])
+                    self._module_menu(_(entry[1]), entry[2])
                 elif entry[0] == "07":
                     self._inventory_menu()
                 elif entry[0] == "08":
@@ -127,33 +129,33 @@ class App:
                     self._config_menu()
         except Quit:
             pass
-        self.console.print("[ksif.dim]Session closed.[/]")
+        self.console.print(f"[ksif.dim]{_('Session closed.')}[/]")
         return 0
 
     # ------------------------------------------------------------ modules
     def _module_menu(self, title: str, module: str) -> None:
         actions = self.engine.actions(module)
         if not actions:
-            self.console.print(Panel(f"{title}: not yet available in this version.", border_style="yellow"))
+            self.console.print(Panel(f"{title}: {_('not yet available in this version.')}", border_style="yellow"))
             return
         while True:
             table = Table(title=title, box=box.ROUNDED, border_style="cyan", title_style="ksif.title")
             for column in ("#", "Action", "Level", "Status", "Description"):
-                table.add_column(column, overflow="fold")
+                table.add_column(_(column), overflow="fold")
             for index, action in enumerate(actions, start=1):
                 ready, reason = self.engine.availability(action)
                 table.add_row(
-                    f"[ksif.key]\\[{index:02d}][/]", action.title,
-                    Text(action.intrusiveness.name.lower(), style=LEVEL_STYLE[action.intrusiveness]),
-                    Text(reason, style="ksif.ok" if ready else "ksif.warn"), action.description,
+                    f"[ksif.key]\\[{index:02d}][/]", i18n.action_title(action),
+                    Text(_(action.intrusiveness.name.lower()), style=LEVEL_STYLE[action.intrusiveness]),
+                    Text(_(reason), style="ksif.ok" if ready else "ksif.warn"), i18n.action_description(action),
                 )
-            table.add_row("[ksif.key]\\[00][/]", "Back", "", "", "")
+            table.add_row("[ksif.key]\\[00][/]", _("Back"), "", "", "")
             self.console.print(table)
             choice = self._ask(f"[ksif.key]{module}>[/] ")
             if choice in ("0", "00", ""):
                 return
             if not choice.isdigit() or not 1 <= int(choice) <= len(actions):
-                self.console.print("[ksif.warn]Unknown option.[/]")
+                self.console.print(f"[ksif.warn]{_('Unknown option.')}[/]")
                 continue
             self._run_action(actions[int(choice) - 1])
             self._pause()
@@ -163,11 +165,11 @@ class App:
         if kinds == frozenset({TargetKind.NONE}):
             return ""
         if kinds == frozenset({TargetKind.INTERFACE}):
-            label = "Interface (must be listed in scope.yaml)"
+            label = _("Interface (must be listed in scope.yaml)")
         elif kinds == frozenset({TargetKind.FILE}):
-            label = "File path"
+            label = _("File path")
         else:
-            label = "Target (" + ", ".join(sorted(k.value for k in kinds)) + ")"
+            label = _("Target") + " (" + ", ".join(sorted(k.value for k in kinds)) + ")"
         value = self._ask(f"{label}: ")
         return value or None
 
@@ -177,11 +179,11 @@ class App:
             if live is not None:
                 live.stop()
             try:
-                self.console.print(Panel(escape(prompt), title="Confirmation required", border_style="yellow"))
+                self.console.print(Panel(escape(prompt), title=_("Confirmation required"), border_style="yellow"))
                 if f"[{Intrusiveness.INTRUSIVE.name}]" in prompt:
-                    typed = self._ask("Intrusive action. Type the target again to confirm: ")
+                    typed = self._ask(_("Intrusive action. Type the target again to confirm:") + " ")
                     return bool(typed) and typed.lower() == raw_target.strip().lower()
-                return self._ask("Proceed? [y/N]: ").lower() in ("y", "yes")
+                return self._ask(_("Proceed?") + " [y/N]: ").lower() in ("y", "yes", "s", "sim")
             finally:
                 if live is not None:
                     live.start()
@@ -191,28 +193,29 @@ class App:
     def _action_help(self, action: Action) -> None:
         """Show how to use the action and an example of the exact command."""
         info = self.engine.describe(action.id)
-        lines = [f"[ksif.title]{escape(action.title)}[/]  "
-                 f"[{LEVEL_STYLE[action.intrusiveness]}]{action.intrusiveness.name.lower()}[/]"
-                 + ("  [ksif.warn]· consent required[/]" if action.consent else "")]
-        if info["usage"]:
-            lines += ["", escape(info["usage"])]
+        usage = i18n.action_usage(action)
+        lines = [f"[ksif.title]{escape(i18n.action_title(action))}[/]  "
+                 f"[{LEVEL_STYLE[action.intrusiveness]}]{_(action.intrusiveness.name.lower())}[/]"
+                 + (f"  [ksif.warn]· {_('consent required')}[/]" if action.consent else "")]
+        if usage:
+            lines += ["", escape(usage)]
         if info["tools"]:
-            state = "ready" if info["available"] else info["availability"]
+            state = _("ready") if info["available"] else _(info["availability"])
             style = "ksif.ok" if info["available"] else "ksif.warn"
-            lines.append(f"\n[ksif.dim]tools:[/] {', '.join(info['tools'])}  [{style}]{state}[/]")
+            lines.append(f"\n[ksif.dim]{_('tools:[/]')} {', '.join(info['tools'])}  [{style}]{state}[/]")
         if info["requires_root"]:
-            lines.append("[ksif.dim]note:[/] needs root (run with sudo)")
-        lines.append(f"[ksif.dim]{escape(info['target_label'])}[/]")
-        lines.append("\n[ksif.dim]example command:[/]")
+            lines.append(f"[ksif.dim]{_('note:[/]')} {_('needs root (run with sudo)')}")
+        lines.append(f"[ksif.dim]{escape(_(info['target_label']))}[/]")
+        lines.append(f"\n[ksif.dim]{_('example command:')}[/]")
         lines += [f"  [ksif.key]{escape(cmd)}[/]" for cmd in info["commands"]]
-        self.console.print(Panel("\n".join(lines), title="How to use", border_style="cyan", box=box.ROUNDED))
+        self.console.print(Panel("\n".join(lines), title=_("How to use"), border_style="cyan", box=box.ROUNDED))
 
     def _show_commands(self, action: Action, target: str, params: dict[str, Any]) -> None:
         """Print the exact command(s) that will run against the chosen target."""
         info = self.engine.describe(action.id, target or "", params)
         if info["commands"] and not info["commands"][0].startswith("(built-in"):
             body = "\n".join(f"  [ksif.key]{escape(c)}[/]" for c in info["commands"])
-            self.console.print(Panel(body, title="Command that will run", border_style="green", box=box.ROUNDED))
+            self.console.print(Panel(body, title=_("Command that will run"), border_style="green", box=box.ROUNDED))
 
     def _run_action(self, action: Action) -> OperationResult | None:
         self._action_help(action)
@@ -222,7 +225,7 @@ class App:
             return None
         params: dict[str, Any] = {}
         for name in action.params:
-            value = self._ask(f"{PARAM_HINTS.get(name, name)}: ")
+            value = self._ask(f"{_(PARAM_HINTS.get(name, name))}: ")
             if value:
                 params[name] = value
         self._show_commands(action, target, params)
@@ -260,21 +263,22 @@ class App:
         return result
 
     def _show_result(self, action: Action, result: OperationResult) -> None:
+        op_label = f"{_('Operation #')}{result.op_id}"
         if result.status == "blocked":
-            self.console.print(Panel(f"[ksif.warn]BLOCKED[/] {escape(result.error or '')}",
-                                     title=f"Operation #{result.op_id}", border_style="yellow"))
+            self.console.print(Panel(f"[ksif.warn]{_('BLOCKED')}[/] {escape(_(result.error or ''))}",
+                                     title=op_label, border_style="yellow"))
             return
         if result.status == "failed":
             op = self.engine.db.get_operation(result.op_id) or {}
             raw = op.get("raw_output_path")
-            hint = f"\nRaw tool output kept at: {escape(raw)}" if raw else ""
-            self.console.print(Panel(f"[ksif.err]FAILED[/] {escape(result.error or '')}{hint}",
-                                     title=f"Operation #{result.op_id}", border_style="red"))
+            hint = f"\n{_('Raw tool output kept at:')} {escape(raw)}" if raw else ""
+            self.console.print(Panel(f"[ksif.err]{_('FAILED')}[/] {escape(_(result.error or ''))}{hint}",
+                                     title=op_label, border_style="red"))
             return
         output = result.output
         assert output is not None
-        self.console.print(Panel(f"[ksif.ok]COMPLETED[/] {escape(output.summary)}",
-                                 title=f"Operation #{result.op_id} · {action.title}", border_style="green"))
+        self.console.print(Panel(f"[ksif.ok]{_('COMPLETED')}[/] {escape(output.summary)}",
+                                 title=f"{op_label} · {i18n.action_title(action)}", border_style="green"))
         if output.hosts:
             self.console.print(views.hosts_table(output.hosts))
             if any(host.ports for host in output.hosts):
@@ -300,45 +304,45 @@ class App:
                 return
             hosts = db.list_hosts()
             if choice == "1":
-                self._print_or_empty(views.hosts_table(hosts, f"Hosts ({len(hosts)})"), hosts)
+                self._print_or_empty(views.hosts_table(hosts, f"{_('Hosts')} ({len(hosts)})"), hosts)
             elif choice == "2":
                 self._print_or_empty(views.ports_table(hosts), [p for h in hosts for p in h.ports])
             elif choice == "3":
                 mapping = subnet_map(hosts)
                 rows = [{"subnet": net, "hosts": len(addrs), "addresses": ", ".join(addrs)}
                         for net, addrs in mapping.items()]
-                self._print_or_empty(views.rows_table("Subnet map", rows), rows)
+                self._print_or_empty(views.rows_table(_("Subnet map"), rows), rows)
             elif choice == "4":
                 rows = db.list_findings()
-                self._print_or_empty(views.findings_table(rows, f"Findings ({len(rows)})"), rows)
+                self._print_or_empty(views.findings_table(rows, f"{_('Findings')} ({len(rows)})"), rows)
             elif choice == "5":
                 rows = db.list_rows("vulnerabilities", None, "priority DESC, id")
                 cols = ["cve_id", "severity", "cvss", "epss", "kev", "host", "product", "version", "priority"]
-                self._print_or_empty(views.rows_table("Vulnerabilities (by priority)", rows, cols), rows)
+                self._print_or_empty(views.rows_table(_("Vulnerabilities (by priority)"), rows, cols), rows)
             elif choice == "6":
                 rows = db.list_rows("osint_records", None, "kind, name")
-                self._print_or_empty(views.rows_table("OSINT records", rows, ["kind", "name", "value", "source"]), rows)
+                self._print_or_empty(views.rows_table(_("OSINT records"), rows, ["kind", "name", "value", "source"]), rows)
             elif choice == "7":
                 rows = db.list_rows("wifi_networks", None, "owned DESC, ssid")
                 cols = ["ssid", "bssid", "channel", "band", "security", "signal", "owned"]
-                self._print_or_empty(views.rows_table("Wi-Fi networks", rows, cols), rows)
+                self._print_or_empty(views.rows_table(_("Wi-Fi networks"), rows, cols), rows)
             elif choice == "8":
                 rows = db.list_operations(40)
                 self._print_or_empty(views.operations_table(rows), rows)
             else:
-                self.console.print("[ksif.warn]Unknown option.[/]")
+                self.console.print(f"[ksif.warn]{_('Unknown option.')}[/]")
 
     def _print_or_empty(self, renderable: Any, rows: list[Any]) -> None:
         if rows:
             self.console.print(renderable)
         else:
-            self.console.print("[ksif.dim]Nothing stored yet.[/]")
+            self.console.print(f"[ksif.dim]{_('Nothing stored yet.')}[/]")
 
     def _options(self, title: str, options: list[tuple[str, str]]) -> None:
-        table = Table(title=title, box=box.ROUNDED, show_header=False, border_style="cyan",
+        table = Table(title=_(title), box=box.ROUNDED, show_header=False, border_style="cyan",
                       title_style="ksif.title")
         for key, label in options:
-            table.add_row(f"[ksif.key]\\[{key}][/]", label)
+            table.add_row(f"[ksif.key]\\[{key}][/]", _(label))
         self.console.print(table)
 
     # ------------------------------------------------------------ reports
@@ -349,19 +353,19 @@ class App:
         op_ids: list[int] | None = None
         if choice == "2":
             self.console.print(views.operations_table(self.engine.db.list_operations(20)))
-            raw = self._ask("Operation #: ")
+            raw = self._ask(_("Operation #:") + " ")
             if not raw.isdigit() or self.engine.db.get_operation(int(raw)) is None:
-                self.console.print("[ksif.warn]No such operation.[/]")
+                self.console.print(f"[ksif.warn]{_('No such operation.')}[/]")
                 return
             op_ids = [int(raw)]
         elif choice != "1":
             return
-        labels = ", ".join(f"{f}{'' if f != 'pdf' or pdf_available() else ' (unavailable)'}" for f in FORMATS)
-        fmt = self._ask(f"Format [{labels}]: ").lower() or "html"
+        labels = ", ".join(f"{f}{'' if f != 'pdf' or pdf_available() else ' ' + _('(unavailable)')}" for f in FORMATS)
+        fmt = self._ask(f"{_('Report format')} [{labels}]: ").lower() or "html"
         if fmt == "md":
             fmt = "markdown"
         if fmt not in FORMATS:
-            self.console.print("[ksif.warn]Unknown format.[/]")
+            self.console.print(f"[ksif.warn]{_('Unknown format.')}[/]")
             return
         report = build_report(self.engine.db, self.engine.scope, self.engine.settings, op_ids)
         try:
@@ -370,9 +374,9 @@ class App:
             self.console.print(f"[ksif.warn]{escape(str(exc))}[/]")
             return
         except OSError as exc:
-            self.console.print(f"[ksif.err]Could not write the report: {escape(str(exc))}[/]")
+            self.console.print(f"[ksif.err]{_('Could not write the report:')} {escape(str(exc))}[/]")
             return
-        self.console.print(Panel(f"[ksif.ok]Report written[/]\n{escape(str(path))}", border_style="green"))
+        self.console.print(Panel(f"[ksif.ok]{_('Report written')}[/]\n{escape(str(path))}", border_style="green"))
 
     # ------------------------------------------------------------ configuration
     def _config_menu(self) -> None:
@@ -381,7 +385,7 @@ class App:
             self._options("Configuration", [
                 ("1", "Switch passive / active mode"), ("2", "Change operator"),
                 ("3", "Reload scope.yaml"), ("4", "Check external tools (runs each tool)"),
-                ("5", "Show audit log"), ("0", "Back"),
+                ("5", "Show audit log"), ("6", "Change language (pt/en)"), ("0", "Back"),
             ])
             choice = self._ask("[ksif.key]config>[/] ")
             if choice in ("0", ""):
@@ -389,71 +393,82 @@ class App:
             if choice == "1":
                 self._toggle_mode()
             elif choice == "2":
-                name = self._ask("Operator name: ")
+                name = self._ask(_("Operator name:") + " ")
                 if name and len(name) <= 64 and name.isprintable():
                     self.engine.set_operator(name)
                     self._save_settings()
                 else:
-                    self.console.print("[ksif.warn]Operator unchanged.[/]")
+                    self.console.print(f"[ksif.warn]{_('Operator unchanged.')}[/]")
             elif choice == "3":
                 if self.config_dir is None:
-                    self.console.print("[ksif.warn]No configuration directory.[/]")
+                    self.console.print(f"[ksif.warn]{_('No configuration directory.')}[/]")
                 else:
                     self.engine.reload_scope(load_scope(self.config_dir / "scope.yaml"))
-                    self.console.print("[ksif.ok]Scope reloaded.[/]")
+                    self.console.print(f"[ksif.ok]{_('Scope reloaded.')}[/]")
             elif choice == "4":
                 rows = asyncio.run(self_test_all(self.engine.runner))
-                table = Table(title="External tools", box=box.SIMPLE_HEAVY, title_style="ksif.title")
+                table = Table(title=_("External tools"), box=box.SIMPLE_HEAVY, title_style="ksif.title")
                 for column in ("Module", "Tool", "Status", "Version / reason"):
-                    table.add_column(column)
+                    table.add_column(_(column))
                 for row in rows:
                     table.add_row(str(row["module"]), str(row["tool"]),
-                                  Text("ok" if row["ok"] else "missing", style="ksif.ok" if row["ok"] else "ksif.warn"),
+                                  Text(_("ok") if row["ok"] else _("missing"),
+                                       style="ksif.ok" if row["ok"] else "ksif.warn"),
                                   escape(str(row["detail"])))
                 self.console.print(table)
             elif choice == "5":
                 rows = [{"ts": r["ts"], "operator": r["operator"], "event": r["event"],
                          "detail": ", ".join(f"{k}={v}" for k, v in r["detail"].items())}
                         for r in self.engine.db.list_audit(25)]
-                self._print_or_empty(views.rows_table("Audit log (latest first)", rows), rows)
+                self._print_or_empty(views.rows_table(_("Audit log (latest first)"), rows), rows)
+            elif choice == "6":
+                self._change_language()
             else:
-                self.console.print("[ksif.warn]Unknown option.[/]")
+                self.console.print(f"[ksif.warn]{_('Unknown option.')}[/]")
 
     def _show_config(self) -> None:
         settings, scope = self.engine.settings, self.engine.scope
         table = Table(box=box.SIMPLE, show_header=False)
         rows = [
-            ("Operator", settings.operator), ("Mode", settings.mode.value),
-            ("Rate limit", f"{settings.rate_limit_seconds:g}s between operations"),
+            ("Operator", settings.operator), ("Mode", _(settings.mode.value)), ("Language", settings.language),
+            ("Rate limit", f"{settings.rate_limit_seconds:g}s " + _("between operations")),
             ("Timeout", f"{settings.default_timeout_seconds}s"), ("Database", str(settings.database_path)),
             ("Logs", str(settings.logs_dir)), ("Reports", str(settings.reports_dir)),
-            ("Engagement", scope.engagement or "(not set)"), ("Scope IPs", ", ".join(scope.ips) or "-"),
+            ("Engagement", scope.engagement or "-"), ("Scope IPs", ", ".join(scope.ips) or "-"),
             ("Scope subnets", ", ".join(scope.subnets) or "-"), ("Scope domains", ", ".join(scope.domains) or "-"),
             ("Scope interfaces", ", ".join(scope.interfaces) or "-"), ("Own BSSIDs", ", ".join(scope.bssids) or "-"),
         ]
         for key, value in rows:
-            table.add_row(f"[ksif.dim]{key}[/]", escape(value))
-        self.console.print(Panel(table, title="Current configuration", border_style="cyan"))
+            table.add_row(f"[ksif.dim]{_(key)}[/]", escape(value))
+        self.console.print(Panel(table, title=_("Current configuration"), border_style="cyan"))
         if scope.is_empty:
-            self.console.print("[ksif.warn]Scope is empty: no active operation can run. "
-                               "Edit config/scope.yaml and reload.[/]")
+            self.console.print(f"[ksif.warn]{_('Scope is empty: no active operation can run. '
+                               'Edit config/scope.yaml and reload.')}[/]")
         for error in scope.errors:
-            self.console.print(f"[ksif.err]scope problem:[/] {escape(error)}")
+            self.console.print(f"[ksif.err]{_('scope problem:')}[/] {escape(error)}")
 
     def _toggle_mode(self) -> None:
         if self.engine.settings.mode is Mode.PASSIVE:
             self.console.print(Panel(
-                "Active mode lets KSIF send traffic to the targets in your scope.\n"
-                "Only continue if you own these systems or hold written authorization.",
-                title="Switch to ACTIVE mode", border_style="yellow"))
-            if self._ask("I am authorized to assess every target in scope [y/N]: ").lower() not in ("y", "yes"):
-                self.console.print("[ksif.dim]Mode unchanged.[/]")
+                _("Active mode lets KSIF send traffic to the targets in your scope.") + "\n"
+                + _("Only continue if you own these systems or hold written authorization."),
+                title=_("Switch to ACTIVE mode"), border_style="yellow"))
+            if self._ask(_("I am authorized to assess every target in scope") + " [y/N]: ").lower() \
+                    not in ("y", "yes", "s", "sim"):
+                self.console.print(f"[ksif.dim]{_('Mode unchanged.')}[/]")
                 return
             self.engine.set_mode(Mode.ACTIVE)
         else:
             self.engine.set_mode(Mode.PASSIVE)
         self._save_settings()
-        self.console.print(f"[ksif.ok]Mode is now {self.engine.settings.mode.value}.[/]")
+        self.console.print(f"[ksif.ok]{_('Mode is now')} {_(self.engine.settings.mode.value)}.[/]")
+
+    def _change_language(self) -> None:
+        choice = self._ask(_("Language (pt/en):") + " ").lower()
+        if choice.startswith(("pt", "en")):
+            self.engine.settings.language = i18n.set_language(choice)
+            self._save_settings()
+            self.console.print(f"[ksif.ok]{_('Language is now')} {self.engine.settings.language}.[/]")
 
     def _save_settings(self) -> None:
         if self.config_dir is None:

@@ -44,6 +44,7 @@ MODULES = (
     "modules.vulnerability_intelligence.actions",
 )
 DEFAULT_SETTINGS = """operator: ""
+language: pt
 mode: passive
 rate_limit_seconds: 2.0
 default_timeout_seconds: 600

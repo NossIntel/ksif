@@ -36,12 +36,21 @@ def fixture_text(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
 
 
+@pytest.fixture(autouse=True)
+def _english_ui():
+    """Keep the UI in English during tests so assertions match; pt is tested on its own."""
+    from ui import i18n
+    i18n.set_language("en")
+    yield
+    i18n.set_language("en")
+
+
 @pytest.fixture
 def settings(tmp_path) -> Settings:
     return Settings(
         operator="tester", mode=Mode.ACTIVE, rate_limit_seconds=0.0, default_timeout_seconds=30,
         database_path=tmp_path / "db" / "ksif.db", logs_dir=tmp_path / "logs",
-        reports_dir=tmp_path / "reports",
+        reports_dir=tmp_path / "reports", language="en",
     )
 
 

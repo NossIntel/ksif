@@ -240,7 +240,23 @@ def register(engine: Engine) -> None:
          "Summarise and cross-reference collected intelligence", _pv_correlate,
          "No target. Summarises everything OSINT has stored so far."),
     ]
+    pt = {
+        "osint.whois": ("Consulta WHOIS", "Dados de registro do domínio",
+            "Informe um domínio. Mostra registrador, datas de criação/expiração e servidores de nomes."),
+        "osint.dns": ("Registros DNS", "Registros A, AAAA, MX, NS, TXT, SOA",
+            "Informe um domínio. Lista os registros DNS e sinaliza política SPF fraca."),
+        "osint.subdomains": ("Descoberta de subdomínios (passiva)", "Enumeração passiva de subdomínios",
+            "Informe um domínio. Usa subfinder (ou amass) para achar subdomínios em fontes públicas."),
+        "osint.tls_cert": ("Inspeção de certificado TLS", "Certificado, protocolo e validade",
+            "Informe um domínio ou URL https. Sem ferramenta externa. Sinaliza TLS fraco e certificado vencendo."),
+        "osint.harvester": ("E-mails e hosts públicos", "E-mails e hosts em fontes públicas",
+            "Informe um domínio; parâmetro opcional de fontes (padrão crtsh,bing,duckduckgo)."),
+        "osint.correlate": ("Correlacionar OSINT armazenado", "Resume e cruza a inteligência coletada",
+            "Sem alvo. Resume tudo que o OSINT já armazenou."),
+    }
     for ident, title, kinds, tools, root, handler, prms, desc, preview, usage in specs:
+        tpt, dpt, upt = pt.get(ident, ("", "", ""))
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=root, handler=handler, params=prms,
-                               description=desc, any_tool=len(tools) > 1, preview=preview, usage=usage))
+                               description=desc, any_tool=len(tools) > 1, preview=preview, usage=usage,
+                               title_pt=tpt, description_pt=dpt, usage_pt=upt))

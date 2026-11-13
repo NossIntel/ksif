@@ -125,7 +125,18 @@ def register(engine: Engine) -> None:
          "Flag weak security on access points you own", _pv_audit,
          "No target. Reviews stored networks and flags weak security (open/WEP/WPA1) on your own BSSIDs."),
     ]
+    pt = {
+        "wifi.scan": ("Listar redes próximas (nmcli)", "Listagem passiva das redes Wi-Fi próximas",
+            "Sem alvo, sem root. Lista as redes próximas (SSID, BSSID, canal, segurança). "
+            "Parâmetro opcional 'rescan' (yes força nova varredura)."),
+        "wifi.scan_iw": ("Varredura em uma interface (iw)", "Varredura passiva em uma interface específica",
+            "Precisa de root e de uma interface no escopo. Varredura passiva nessa interface. Ex.:  wlan0"),
+        "wifi.audit": ("Auditar redes armazenadas", "Sinaliza segurança fraca nos seus pontos de acesso",
+            "Sem alvo. Revisa as redes armazenadas e sinaliza segurança fraca (aberta/WEP/WPA1) nos seus BSSIDs."),
+    }
     for ident, title, kinds, tools, root, handler, prms, desc, preview, usage in specs:
+        tpt, dpt, upt = pt.get(ident, ("", "", ""))
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=root, handler=handler, params=prms,
-                               description=desc, preview=preview, usage=usage))
+                               description=desc, preview=preview, usage=usage,
+                               title_pt=tpt, description_pt=dpt, usage_pt=upt))

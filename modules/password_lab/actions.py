@@ -165,7 +165,20 @@ def register(engine: Engine) -> None:
          ("wordlist", "format"), "Offline dictionary audit of hashes you own", attest, _pv_hash,
          "Give a hash file you own as target and a 'wordlist'; optional 'format' (e.g. raw-md5). Offline only."),
     ]
+    pt = {
+        "pass.analyze": ("Analisar uma senha", "Entropia e política para uma senha (não armazenada)",
+            "Sem alvo. Digite a senha no parâmetro 'password'; 'min_length' opcional (padrão 12). "
+            "A análise é offline e a senha não é armazenada."),
+        "pass.policy_audit": ("Auditar uma lista de senhas", "Estatísticas de política de uma lista sua",
+            "Informe o caminho de um arquivo com senhas suas (uma por linha). Relata quantas são fracas."),
+        "pass.compromised": ("Comparar com lista vazada", "Compara suas senhas com uma lista de vazamentos local",
+            "Informe seu arquivo de senhas como alvo e uma lista de vazamentos (ex.: rockyou.txt) em 'wordlist'."),
+        "pass.hash_audit": ("Auditar seus próprios hashes (john)", "Auditoria offline por dicionário de hashes seus",
+            "Informe um arquivo de hashes seu como alvo e uma 'wordlist'; 'format' opcional. Só offline."),
+    }
     for ident, title, kinds, tools, handler, prms, desc, consent, preview, usage in specs:
+        tpt, dpt, upt = pt.get(ident, ("", "", ""))
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=False, handler=handler, params=prms,
-                               description=desc, consent=consent, preview=preview, usage=usage))
+                               description=desc, consent=consent, preview=preview, usage=usage,
+                               title_pt=tpt, description_pt=dpt, usage_pt=upt))
