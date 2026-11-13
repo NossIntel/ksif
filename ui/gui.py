@@ -160,8 +160,17 @@ class KsifGui:
         self.browse_btn = ttk.Button(self.target_row, text="Browse", command=self._browse)
         self.params_frame = ttk.Frame(form, style="Panel.TFrame")
         self.params_frame.pack(fill="x")
-        self.run_btn = ttk.Button(form, text="Run", command=self._run)
-        self.run_btn.pack(anchor="e", pady=4)
+        ttk.Label(form, text="How to use & exact command", style="Head.TLabel").pack(anchor="w", pady=(6, 0))
+        self.howto = scrolledtext.ScrolledText(form, bg="#0b0f14", fg="#8b949e", height=7,
+                                               borderwidth=0, font=("Consolas", 9), wrap="word")
+        self.howto.pack(fill="x")
+        self.howto.tag_config("cmd", foreground="#58d68d")
+        self.howto.tag_config("warn", foreground=WARN)
+        btn_row = ttk.Frame(form, style="Panel.TFrame")
+        btn_row.pack(fill="x", pady=4)
+        ttk.Button(btn_row, text="Preview command", command=lambda: self._update_howto(True)).pack(side="left")
+        self.run_btn = ttk.Button(btn_row, text="Run", command=self._run)
+        self.run_btn.pack(side="right")
 
         right = ttk.Frame(body)
         right.pack(side="left", fill="both", expand=True)
@@ -244,6 +253,24 @@ class KsifGui:
             show = "*" if name == "password" else ""
             ttk.Entry(row, textvariable=var, show=show, width=40).pack(side="left", fill="x", expand=True)
             self.param_vars[name] = var
+        self._update_howto(False)
+
+    def _update_howto(self, use_inputs: bool) -> None:
+        """Fill the how-to/command box, from the typed target/params or an example."""
+        if not self.current_action:
+            return
+        target = self.target_var.get().strip() if use_inputs else ""
+        params = {n: v.get().strip() for n, v in self.param_vars.items()} if use_inputs else {}
+        info = self.engine.describe(self.current_action.id, target, params)
+        self.howto.delete("1.0", "end")
+        if info["usage"]:
+            self.howto.insert("end", info["usage"] + "\n\n")
+        if info["requires_root"]:
+            self.howto.insert("end", "needs root (run with sudo)\n", "warn")
+        label = "command that will run:" if use_inputs and target else "example command:"
+        self.howto.insert("end", label + "\n")
+        for cmd in info["commands"]:
+            self.howto.insert("end", "  " + cmd + "\n", "cmd")
 
     def _browse(self) -> None:
         path = filedialog.askopenfilename(title="Select a file")
@@ -265,6 +292,10 @@ class KsifGui:
         self.run_btn.configure(state="disabled")
         self.status.configure(text=f"Running {action.title}…")
         self.log.delete("1.0", "end")
+        info = self.engine.describe(action.id, target, params)
+        for cmd in info["commands"]:
+            self.log.insert("end", "$ " + cmd + "\n")
+        self.log.insert("end", "\n")
         threading.Thread(target=self._worker, args=(action, target, params), daemon=True).start()
 
     def _worker(self, action: Action, target: str, params: dict[str, Any]) -> None:

@@ -93,18 +93,39 @@ def _output(networks: list[dict]) -> ActionOutput:
                         data={"by_band": by_band})
 
 
+def _cmd(binary: str, args: list[str]) -> str:
+    return binary + " " + " ".join(args)
+
+
+def _pv_scan(t, p):
+    rescan = str(p.get("rescan", "")).lower() in ("1", "true", "yes")
+    return [_cmd("nmcli", NmcliIntegration(None).scan_args(rescan))]
+
+
+def _pv_scan_iw(t, p):
+    return [_cmd("iw", IwIntegration(None).scan_args(t.value))]
+
+
+def _pv_audit(t, p):
+    return ["(built-in) reads the Wi-Fi networks already stored; flags weak security on your own access points"]
+
+
 def register(engine: Engine) -> None:
     """Register every Wi-Fi audit action (all passive)."""
     p = Intrusiveness.PASSIVE
     specs = [
         ("wifi.scan", "Scan nearby networks (nmcli)", NONE, ("nmcli",), False, scan_nmcli, ("rescan",),
-         "Passive listing of nearby Wi-Fi networks"),
+         "Passive listing of nearby Wi-Fi networks", _pv_scan,
+         "No target, no root. Lists nearby networks (SSID, BSSID, channel, security). "
+         "Optional 'rescan' param (yes forces a fresh scan)."),
         ("wifi.scan_iw", "Scan on interface (iw)", INTERFACE, ("iw",), True, scan_iw, (),
-         "Passive scan on a specific interface"),
+         "Passive scan on a specific interface", _pv_scan_iw,
+         "Needs root and an interface in scope. Passive scan on that interface. Enter e.g.  wlan0"),
         ("wifi.audit", "Audit stored networks", NONE, (), False, audit, (),
-         "Flag weak security on access points you own"),
+         "Flag weak security on access points you own", _pv_audit,
+         "No target. Reviews stored networks and flags weak security (open/WEP/WPA1) on your own BSSIDs."),
     ]
-    for ident, title, kinds, tools, root, handler, prms, desc in specs:
+    for ident, title, kinds, tools, root, handler, prms, desc, preview, usage in specs:
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=root, handler=handler, params=prms,
-                               description=desc))
+                               description=desc, preview=preview, usage=usage))

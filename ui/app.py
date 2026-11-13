@@ -188,7 +188,34 @@ class App:
 
         return confirm
 
+    def _action_help(self, action: Action) -> None:
+        """Show how to use the action and an example of the exact command."""
+        info = self.engine.describe(action.id)
+        lines = [f"[ksif.title]{escape(action.title)}[/]  "
+                 f"[{LEVEL_STYLE[action.intrusiveness]}]{action.intrusiveness.name.lower()}[/]"
+                 + ("  [ksif.warn]· consent required[/]" if action.consent else "")]
+        if info["usage"]:
+            lines += ["", escape(info["usage"])]
+        if info["tools"]:
+            state = "ready" if info["available"] else info["availability"]
+            style = "ksif.ok" if info["available"] else "ksif.warn"
+            lines.append(f"\n[ksif.dim]tools:[/] {', '.join(info['tools'])}  [{style}]{state}[/]")
+        if info["requires_root"]:
+            lines.append("[ksif.dim]note:[/] needs root (run with sudo)")
+        lines.append(f"[ksif.dim]{escape(info['target_label'])}[/]")
+        lines.append("\n[ksif.dim]example command:[/]")
+        lines += [f"  [ksif.key]{escape(cmd)}[/]" for cmd in info["commands"]]
+        self.console.print(Panel("\n".join(lines), title="How to use", border_style="cyan", box=box.ROUNDED))
+
+    def _show_commands(self, action: Action, target: str, params: dict[str, Any]) -> None:
+        """Print the exact command(s) that will run against the chosen target."""
+        info = self.engine.describe(action.id, target or "", params)
+        if info["commands"] and not info["commands"][0].startswith("(built-in"):
+            body = "\n".join(f"  [ksif.key]{escape(c)}[/]" for c in info["commands"])
+            self.console.print(Panel(body, title="Command that will run", border_style="green", box=box.ROUNDED))
+
     def _run_action(self, action: Action) -> OperationResult | None:
+        self._action_help(action)
         target = self._target_prompt(action)
         if target is None:
             self.console.print("[ksif.warn]No target given; nothing was run.[/]")
@@ -198,6 +225,7 @@ class App:
             value = self._ask(f"{PARAM_HINTS.get(name, name)}: ")
             if value:
                 params[name] = value
+        self._show_commands(action, target, params)
 
         tail: deque[str] = deque(maxlen=8)
         progress = Progress(

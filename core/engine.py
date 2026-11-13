@@ -127,6 +127,8 @@ class Action:
     description: str = ""
     any_tool: bool = False  # True: one of required_tools is enough
     consent: str = ""  # non-empty: always ask the operator to confirm this statement
+    usage: str = ""  # human "how to use": what to give it, what it returns, notes
+    preview: Callable[[Target, dict[str, Any]], list[str]] | None = None  # exact command(s)
 
 
 @dataclass
@@ -189,6 +191,33 @@ class Engine:
         if action.requires_root and not self._root_check():
             return False, "requires root (run with sudo)"
         return True, "ready"
+
+    def describe(self, action_id: str, raw_target: str = "", params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Explain an action without running it: how to use it, the exact
+        command(s) it will run (for the given or an example target) and whether
+        it can run now. Never raises and never spawns a process."""
+        action = self._actions[action_id]
+        params = dict(params or {})
+        available, reason = self.availability(action)
+        target = _preview_target(action, raw_target)
+        used_example = bool(raw_target.strip()) is False and target is not None
+        commands: list[str] = []
+        if action.preview is not None and target is not None:
+            try:
+                commands = action.preview(target, _preview_params(action, params))
+            except Exception:  # noqa: BLE001 - a preview must never break the UI
+                commands = []
+        return {
+            "id": action.id, "title": action.title, "module": action.module,
+            "description": action.description, "usage": action.usage,
+            "intrusiveness": action.intrusiveness.name.lower(),
+            "requires_root": action.requires_root, "consent": action.consent,
+            "tools": list(action.required_tools), "any_tool": action.any_tool,
+            "available": available, "availability": reason,
+            "target_label": _target_label(action.target_kinds),
+            "params": list(action.params), "commands": commands,
+            "example_target": target.value if (used_example and target) else "",
+        }
 
     # -- settings ------------------------------------------------------------
     def set_mode(self, mode: Mode) -> None:
@@ -323,3 +352,62 @@ class Engine:
             return OperationResult(op_id, "failed", None, message)
         self.db.finish_operation(op_id, "completed", summary=output.summary)
         return OperationResult(op_id, "completed", output, None)
+
+
+# -- preview / describe helpers ----------------------------------------------
+_PLACEHOLDERS: dict[TargetKind, str] = {
+    TargetKind.DOMAIN: "example.com",
+    TargetKind.URL: "https://example.com/",
+    TargetKind.CIDR: "198.51.100.0/24",
+    TargetKind.IPV4: "198.51.100.10",
+    TargetKind.IPV6: "2001:db8::10",
+    TargetKind.INTERFACE: "wlan0",
+    TargetKind.FILE: "/path/to/file",
+}
+_PLACEHOLDER_ORDER = (TargetKind.CIDR, TargetKind.DOMAIN, TargetKind.URL, TargetKind.IPV4,
+                      TargetKind.IPV6, TargetKind.INTERFACE, TargetKind.FILE)
+_PARAM_DEFAULTS = {
+    "interface": "wlan0", "ports": "", "rate": "100", "duration": "30",
+    "wordlist": "/usr/share/wordlists/rockyou.txt", "format": "", "sources": "crtsh,bing,duckduckgo",
+    "severity": "low,medium,high,critical", "query": "nginx 1.18.0", "port": "443",
+    "password": "<password>", "min_length": "12", "rescan": "no", "breached": "/usr/share/wordlists/rockyou.txt",
+}
+
+
+def _preview_target(action: Action, raw: str) -> Target | None:
+    """A real target (if the user gave a valid one) or a documentation example."""
+    kinds = action.target_kinds
+    if kinds == frozenset({TargetKind.NONE}):
+        return LOCAL_TARGET
+    raw = raw.strip()
+    if raw:
+        try:
+            if kinds == frozenset({TargetKind.INTERFACE}):
+                return parse_interface_target(raw)
+            if kinds == frozenset({TargetKind.FILE}):
+                return parse_file_target(raw)
+            parsed = parse_target(raw)
+            if parsed.kind in kinds:
+                return parsed
+        except ValidationError:
+            pass
+    for kind in _PLACEHOLDER_ORDER:
+        if kind in kinds:
+            return Target(kind, _PLACEHOLDERS[kind])
+    return None
+
+
+def _preview_params(action: Action, params: dict[str, Any]) -> dict[str, Any]:
+    merged = {name: _PARAM_DEFAULTS.get(name, "") for name in action.params}
+    merged.update({k: v for k, v in params.items() if str(v).strip()})
+    return merged
+
+
+def _target_label(kinds: frozenset[TargetKind]) -> str:
+    if kinds == frozenset({TargetKind.NONE}):
+        return "(no target: uses stored data)"
+    if kinds == frozenset({TargetKind.INTERFACE}):
+        return "network interface (e.g. wlan0)"
+    if kinds == frozenset({TargetKind.FILE}):
+        return "path to a local file"
+    return "target: " + ", ".join(sorted(k.value for k in kinds))

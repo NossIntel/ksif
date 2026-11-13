@@ -68,6 +68,16 @@ Outcomes:
 - **FAILED** — the tool ran but its output was incomplete or it timed out.
   Nothing partial is stored; the raw output path is shown.
 
+### Built-in help for every action
+
+Pick an action by its number and KSIF first shows a **How to use** panel: what
+to enter, which tool it needs (and whether it is installed), whether it needs
+root, and an example of the exact command. After you type the target and
+parameters it shows **Command that will run** with your real values, then asks
+for confirmation. The same command is stored with the operation and in the
+audit log, so you can repeat it by hand. The GUI shows the same text in the
+*How to use & exact command* box (button **Preview command**).
+
 ## 5. Asset Inventory (`07`)
 
 Hosts, ports and services, subnet map, findings, vulnerabilities, OSINT

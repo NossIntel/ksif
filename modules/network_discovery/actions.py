@@ -149,29 +149,72 @@ async def passive_capture(ctx: ActionContext, params: dict[str, Any]) -> ActionO
     return output
 
 
+def _cmd(binary: str, args: list[str]) -> str:
+    return binary + " " + " ".join(args)
+
+
+def _pv_host_discovery(t, p):
+    return [_cmd("nmap", NmapIntegration(None).host_discovery_args(t))]
+
+
+def _pv_port_scan(t, p):
+    return [_cmd("nmap", NmapIntegration(None).port_scan_args(t, ports=p.get("ports") or None))]
+
+
+def _pv_service_os(t, p):
+    return [_cmd("nmap", NmapIntegration(None).port_scan_args(
+        t, ports=p.get("ports") or None, service_detection=True, os_detection=True))]
+
+
+def _pv_topology(t, p):
+    return [_cmd("nmap", NmapIntegration(None).port_scan_args(t, top_ports=100, traceroute=True))]
+
+
+def _pv_arp(t, p):
+    return [_cmd("arp-scan", ArpScanIntegration(None).scan_args(p.get("interface") or "wlan0", t))]
+
+
+def _pv_fast_sweep(t, p):
+    return [_cmd("masscan", MasscanIntegration(None).scan_args(
+        t, p.get("ports") or "22,80,443,445,3389,8080", int(p.get("rate") or 100)))]
+
+
+def _pv_capture(t, p):
+    return [_cmd("tshark", TsharkIntegration(None).capture_args(t.value, int(p.get("duration") or 30)))]
+
+
 def register(engine: Engine) -> None:
     """Register every Network Discovery action."""
     iface = frozenset({TargetKind.INTERFACE})
     a, i, p = Intrusiveness.ACTIVE, Intrusiveness.INTRUSIVE, Intrusiveness.PASSIVE
     specs = [
         ("net.host_discovery", "Host discovery (ping sweep)", a, NET_KINDS, ("nmap",), False, host_discovery, (),
-         "Find live hosts, MAC addresses and vendors"),
+         "Find live hosts, MAC addresses and vendors", _pv_host_discovery,
+         "Give an IP, range (CIDR) or domain. Finds which hosts are up and their MAC/vendor.\n"
+         "Example: choose this action, then enter  192.168.1.0/24"),
         ("net.arp_scan", "ARP scan (local segment)", a, V4_KINDS, ("arp-scan",), True, arp_scan, ("interface",),
-         "Layer-2 discovery of devices on your own LAN"),
+         "Layer-2 discovery of devices on your own LAN", _pv_arp,
+         "Needs root and an interface in scope. Finds devices that ignore ping. IPv4 only.\n"
+         "Enter target  192.168.1.0/24  and interface param  eth0"),
         ("net.port_scan", "Port scan", a, NET_KINDS, ("nmap",), False, port_scan, ("ports",),
-         "Open TCP ports (top 1000 by default)"),
+         "Open TCP ports (top 1000 by default)", _pv_port_scan,
+         "Enter a target; optionally a 'ports' param like 22,80,443 or 1-1024 (empty = top 1000)."),
         ("net.service_os", "Service, version and OS detection", a, NET_KINDS, ("nmap",), True, service_os,
-         ("ports",), "Service versions and OS fingerprint"),
+         ("ports",), "Service versions and OS fingerprint", _pv_service_os,
+         "Needs root (OS detection). Identifies service versions, feeding module 06 (CVEs)."),
         ("net.topology", "Topology (traceroute)", a, NET_KINDS, ("nmap",), True, topology, (),
-         "Hop-by-hop paths and subnet map"),
+         "Hop-by-hop paths and subnet map", _pv_topology,
+         "Needs root. Maps the route to the target and groups hosts by subnet."),
         ("net.fast_sweep", "Fast sweep (masscan, rate-capped)", i, V4_KINDS, ("masscan",), True, fast_sweep,
-         ("ports", "rate"), "High-speed sweep; authorized scopes only"),
+         ("ports", "rate"), "High-speed sweep; authorized scopes only", _pv_fast_sweep,
+         "Intrusive: you must retype the target to confirm. Rate is capped at 1000 pps. IPv4 only."),
         ("net.passive_capture", "Passive capture (tshark)", p, iface, ("tshark",), True, passive_capture,
-         ("duration",), "Listen only: hosts and protocols seen on an interface"),
+         ("duration",), "Listen only: hosts and protocols seen on an interface", _pv_capture,
+         "Passive: listens on an interface for N seconds (max 300) and lists hosts/protocols. No packets stored."),
     ]
-    for ident, title, level, kinds, tools, root, handler, params, description in specs:
+    for ident, title, level, kinds, tools, root, handler, params, description, preview, usage in specs:
         engine.register(
             Action(id=ident, module=MODULE, title=title, intrusiveness=level, target_kinds=kinds,
                    required_tools=tools, requires_root=root, handler=handler, params=params,
-                   description=description)
+                   description=description, preview=preview, usage=usage)
         )

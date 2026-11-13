@@ -188,24 +188,59 @@ def days_until_iso(value: str) -> int | None:
     return None
 
 
+def _cmd(binary: str, args: list[str]) -> str:
+    return binary + " " + " ".join(args)
+
+
+def _pv_whois(t, p):
+    return [_cmd("whois", WhoisIntegration(None).query_args(t))]
+
+
+def _pv_dns(t, p):
+    return [_cmd("dig", DigIntegration(None).query_args(t))]
+
+
+def _pv_subdomains(t, p):
+    return [_cmd("subfinder", SubfinderIntegration(None).query_args(t)),
+            _cmd("amass", AmassIntegration(None).query_args(t)) + "   (used if subfinder is absent)"]
+
+
+def _pv_harvester(t, p):
+    return [_cmd("theHarvester", TheHarvesterIntegration(None).query_args(t, p.get("sources") or "crtsh,bing,duckduckgo"))]
+
+
+def _pv_tls(t, p):
+    return [f"(built-in) TLS handshake to {t.value}:{p.get('port') or 443}; reads certificate, protocol and expiry"]
+
+
+def _pv_correlate(t, p):
+    return ["(built-in) reads the OSINT records already stored in the database; runs no external tool"]
+
+
 def register(engine: Engine) -> None:
     """Register every OSINT action."""
     p = Intrusiveness.PASSIVE
     specs = [
         ("osint.whois", "WHOIS lookup", DOMAIN, ("whois",), False, whois_lookup, (),
-         "Domain registration data"),
+         "Domain registration data", _pv_whois,
+         "Enter a domain. Shows registrar, creation/expiry dates and name servers."),
         ("osint.dns", "DNS records", DOMAIN, ("dig",), False, dns_records, (),
-         "A, AAAA, MX, NS, TXT, SOA records"),
+         "A, AAAA, MX, NS, TXT, SOA records", _pv_dns,
+         "Enter a domain. Lists DNS records and flags a weak SPF policy."),
         ("osint.subdomains", "Subdomain discovery (passive)", DOMAIN, ("subfinder", "amass"), False,
-         subdomains, (), "Passive subdomain enumeration"),
+         subdomains, (), "Passive subdomain enumeration", _pv_subdomains,
+         "Enter a domain. Uses subfinder (or amass) to find subdomains from public sources."),
         ("osint.tls_cert", "TLS certificate inspection", DOMAIN_OR_URL, (), False, tls_certificate,
-         ("port",), "Certificate, protocol and expiry"),
+         ("port",), "Certificate, protocol and expiry", _pv_tls,
+         "Enter a domain or https URL. No external tool. Flags weak TLS and expiring certificates."),
         ("osint.harvester", "Public emails and hosts", DOMAIN, ("theHarvester",), False, harvester,
-         ("sources",), "Emails and hosts from public sources"),
+         ("sources",), "Emails and hosts from public sources", _pv_harvester,
+         "Enter a domain; optional 'sources' param (default crtsh,bing,duckduckgo)."),
         ("osint.correlate", "Correlate stored OSINT", NONE, (), False, correlate, (),
-         "Summarise and cross-reference collected intelligence"),
+         "Summarise and cross-reference collected intelligence", _pv_correlate,
+         "No target. Summarises everything OSINT has stored so far."),
     ]
-    for ident, title, kinds, tools, root, handler, prms, desc in specs:
+    for ident, title, kinds, tools, root, handler, prms, desc, preview, usage in specs:
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=root, handler=handler, params=prms,
-                               description=desc, any_tool=len(tools) > 1))
+                               description=desc, any_tool=len(tools) > 1, preview=preview, usage=usage))

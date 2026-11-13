@@ -158,23 +158,54 @@ async def wpscan_scan(ctx: ActionContext, params: dict[str, Any]) -> ActionOutpu
                         summary=f"wpscan: WordPress {data['version'] or '?'}, {len(findings)} finding(s)")
 
 
+def _cmd(binary: str, args: list[str]) -> str:
+    return binary + " " + " ".join(args)
+
+
+def _pv_fingerprint(t, p):
+    return [_cmd("whatweb", WhatWebIntegration(None).scan_args(t))]
+
+
+def _pv_headers(t, p):
+    url = t.value if t.kind is TargetKind.URL else f"https://{t.value}/"
+    return [f"(built-in) GET {url} and inspect HSTS, CSP, X-Frame-Options, X-Content-Type-Options, cookies"]
+
+
+def _pv_nikto(t, p):
+    return [_cmd("nikto", NiktoIntegration(None).scan_args(t))]
+
+
+def _pv_nuclei(t, p):
+    return [_cmd("nuclei", NucleiIntegration(None).scan_args(t, p.get("severity") or "low,medium,high,critical"))]
+
+
+def _pv_wpscan(t, p):
+    return [_cmd("wpscan", WpscanIntegration(None).scan_args(t)) + "   (--api-token added if WPSCAN_API_TOKEN is set)"]
+
+
 def register(engine: Engine) -> None:
     """Register every Web Security action."""
     a = Intrusiveness.ACTIVE
     specs = [
         ("web.fingerprint", "Technology fingerprint (WhatWeb)", a, WEB, ("whatweb",), fingerprint, (),
-         "Identify server, frameworks and technologies", ""),
+         "Identify server, frameworks and technologies", "", _pv_fingerprint,
+         "Enter a domain, URL or IP. Identifies the server, frameworks and libraries in use."),
         ("web.headers", "Security header check", a, WEB, (), security_headers, (),
-         "HTTP security headers (HSTS, CSP, cookies)", ""),
+         "HTTP security headers (HSTS, CSP, cookies)", "", _pv_headers,
+         "Enter a domain or URL. No external tool. Checks the HTTP security headers."),
         ("web.nikto", "Server misconfiguration scan (nikto)", a, WEB, ("nikto",), nikto_scan, (),
-         "Known web-server issues and exposed files", ""),
+         "Known web-server issues and exposed files", "", _pv_nikto,
+         "Enter a domain or URL. Scans for known server issues and exposed files (noisy)."),
         ("web.nuclei", "Template scan (nuclei)", a, WEB, ("nuclei",), nuclei_scan, ("severity",),
-         "Community templates for known issues", ""),
+         "Community templates for known issues", "", _pv_nuclei,
+         "Enter a target; optional 'severity' (default low,medium,high,critical). Maps CVEs to module 06."),
         ("web.wpscan", "WordPress assessment (wpscan)", a, WEB_URL, ("wpscan",), wpscan_scan, (),
          "WordPress core/plugin issues (owned sites only)",
-         "I confirm this WordPress site is mine or I am authorized to assess it"),
+         "I confirm this WordPress site is mine or I am authorized to assess it", _pv_wpscan,
+         "Only for hosts listed under 'wordpress_sites' in scope.yaml. Enumerates core/plugins/users."),
     ]
-    for ident, title, level, kinds, tools, handler, prms, desc, consent in specs:
+    for ident, title, level, kinds, tools, handler, prms, desc, consent, preview, usage in specs:
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=level,
                                target_kinds=kinds, required_tools=tools, requires_root=False,
-                               handler=handler, params=prms, description=desc, consent=consent))
+                               handler=handler, params=prms, description=desc, consent=consent,
+                               preview=preview, usage=usage))

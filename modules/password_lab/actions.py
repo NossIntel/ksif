@@ -123,21 +123,49 @@ def _int(value: object, default: int) -> int:
         return default
 
 
+def _pv_analyze(t, p):
+    return ["(built-in) rates the typed password offline (entropy + weak-pattern checks). "
+            "The password is never stored or sent anywhere."]
+
+
+def _pv_policy(t, p):
+    where = t.value if t and t.kind is TargetKind.FILE else "<password-list-file>"
+    return [f"(built-in) reads {where} and computes policy statistics offline"]
+
+
+def _pv_compromised(t, p):
+    where = t.value if t and t.kind is TargetKind.FILE else "<your-password-list>"
+    breach = p.get("wordlist") or "<local-breach-list>"
+    return [f"(built-in) compares each password in {where} against {breach} offline"]
+
+
+def _pv_hash(t, p):
+    hashfile = t.value if t and t.kind is TargetKind.FILE else "<hashfile>"
+    wl = p.get("wordlist") or "<wordlist>"
+    fmt = f" --format={p['format']}" if p.get("format") else ""
+    return [f"john --wordlist={wl}{fmt} {hashfile}", f"john --show{fmt} {hashfile}"]
+
+
 def register(engine: Engine) -> None:
     """Register every Password Lab action (all offline/passive)."""
     p = Intrusiveness.PASSIVE
     attest = "I own, or am authorized to audit, this password/hash material"
     specs = [
         ("pass.analyze", "Analyse one password", NONE, (), analyze_password, ("password", "min_length"),
-         "Entropy and policy check for a single password (not stored)", ""),
+         "Entropy and policy check for a single password (not stored)", "", _pv_analyze,
+         "No target. Type the password in the 'password' param; optional 'min_length' (default 12). "
+         "The password is analysed offline and never stored."),
         ("pass.policy_audit", "Audit a password list", FILE, (), policy_audit, ("min_length",),
-         "Policy statistics for a password list you own", attest),
+         "Policy statistics for a password list you own", attest, _pv_policy,
+         "Give a path to a file of passwords you own (one per line). Reports how many are weak."),
         ("pass.compromised", "Check against a compromised list", FILE, (), compromised_check, ("wordlist",),
-         "Match your passwords against a local breach list", attest),
+         "Match your passwords against a local breach list", attest, _pv_compromised,
+         "Give your password-list file as target and a local breach list (e.g. rockyou.txt) in 'wordlist'."),
         ("pass.hash_audit", "Audit your own hashes (john)", FILE, ("john",), hash_audit,
-         ("wordlist", "format"), "Offline dictionary audit of hashes you own", attest),
+         ("wordlist", "format"), "Offline dictionary audit of hashes you own", attest, _pv_hash,
+         "Give a hash file you own as target and a 'wordlist'; optional 'format' (e.g. raw-md5). Offline only."),
     ]
-    for ident, title, kinds, tools, handler, prms, desc, consent in specs:
+    for ident, title, kinds, tools, handler, prms, desc, consent, preview, usage in specs:
         engine.register(Action(id=ident, module=MODULE, title=title, intrusiveness=p, target_kinds=kinds,
                                required_tools=tools, requires_root=False, handler=handler, params=prms,
-                               description=desc, consent=consent))
+                               description=desc, consent=consent, preview=preview, usage=usage))
